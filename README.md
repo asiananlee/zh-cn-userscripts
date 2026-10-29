@@ -9,25 +9,21 @@
 [![脚本检查](https://github.com/asiananlee/zh-cn-userscripts/actions/workflows/check.yml/badge.svg)](https://github.com/asiananlee/zh-cn-userscripts/actions/workflows/check.yml)
 [![许可证：MIT](https://img.shields.io/badge/许可证-MIT-blue.svg)](LICENSE)
 
-<img src="docs/images/postmark-create-server-desktop.jpg" width="560" alt="安装脚本后的 Postmark「开始设置服务器」页面，标题、说明、选项和按钮都显示为中文">
-
-<sub>安装 Postmark 脚本后的「开始设置服务器」页面</sub>
-
 </div>
 
 ## 脚本列表
 
 | 站点 | 覆盖范围 | 版本 | 状态 | 安装 |
 | --- | --- | --- | --- | --- |
-| [OpenRouter](https://openrouter.ai) | 账户与工作区控制台 `openrouter.ai` | 0.1.1 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/openrouter-zh-cn.user.js) · [覆盖报告](docs/openrouter-coverage.md) |
-| [Postmark](https://postmarkapp.com) | 账户控制台 `account.postmarkapp.com` | 0.1.1 | 部分验证 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/postmark-zh-cn.user.js) · [覆盖报告](docs/postmark-coverage.md) |
+| [OpenRouter](https://openrouter.ai) | 账户与工作区控制台 `openrouter.ai` | 0.1.1 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/openrouter-zh-cn.user.js) |
+| [Postmark](https://postmarkapp.com) | 账户控制台 `account.postmarkapp.com` | 0.1.1 | 部分验证 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/postmark-zh-cn.user.js) |
 
 **状态**的含义：
 - **已验证**：当前版本在真实网站上重放了全部页面状态。
 - **部分验证**：只重放了一部分页面状态。
 - **候选版**：当前版本还没在真实网站上重放。
 
-每份覆盖报告都写明验证到了什么程度，以及已知还有哪些英文没翻译。
+每个脚本的覆盖范围和已知缺口，写在[脚本文件](scripts/)开头的注释里。
 
 想要的网站不在表里？[提交新站点请求](https://github.com/asiananlee/zh-cn-userscripts/issues/new?template=new-site.yml)。
 
@@ -56,7 +52,7 @@
 
 - **只做一件事**：把界面文案替换成简体中文，包括按钮、菜单、标签、提示、弹窗等。
 - **不翻译**动态数据和需要保持原样的内容：用户输入、资源名、模型名、提示词与日志正文、代码、API 密钥、网址、数字与金额、品牌名，以及 API、JSON、HTTP 等通用缩写。
-- **覆盖不到**：跨域 iframe（例如支付页）、canvas 里画的文字、图片里的文字、服务器返回的英文报错。每个脚本具体的缺口写在它的覆盖报告里。
+- **覆盖不到**：跨域 iframe（例如支付页）、canvas 里画的文字、图片里的文字、服务器返回的英文报错。每个脚本具体的缺口写在脚本文件开头的注释里。
 
 ## 安全与隐私
 

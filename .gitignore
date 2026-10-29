@@ -11,7 +11,7 @@ node_modules/
 *.pem
 *.key
 
-# 采集阶段的中间产物：含真实页面内容，只留在本机（脚本规范 1.6）
+# 采集和验证阶段的产物：含真实页面内容，只留在本机（脚本规范 1.6）
 01-sitemap.md
 02-strings/
 02-summary.md
@@ -21,16 +21,17 @@ node_modules/
 04-screenshots/
 coverage-report.md
 coverage-report-*.md
+*-coverage.md
 glossary.md
 *.har
 *.log
 
-# 截图默认不入库，避免带出个人信息；README 配图放 docs/images/，只用 JPG 或 PNG（脚本规范 1.7）
+# 图片一律不入库，README 里也不放图片（脚本规范 1.7）
 *.png
 *.jpg
 *.jpeg
 *.webp
 *.gif
-!docs/images/*.png
-!docs/images/*.jpg
-!docs/images/*.jpeg
+*.svg
+*.bmp
+*.avif

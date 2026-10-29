@@ -4,7 +4,7 @@
 //   node tools/check-userscripts.mjs              检查整个仓库（CI 用这个）
 //   node tools/check-userscripts.mjs 文件...       只检查指定的脚本
 //   node tools/check-userscripts.mjs --base 提交   另外检查：相对该提交改过的脚本必须提高版本号
-// 这是基于文本规则的把关，宁可误报；它不是安全证明，最终靠规范第 6 节的审查。
+// 这是基于文本规则的把关，宁可误报；它不是安全证明，最终靠规范第 5 节的审查。
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, extname, join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -80,17 +80,18 @@ const LOCAL_PATHS = [
 ];
 const ALLOWED_EMAIL = /^(\d+\+)?[A-Za-z0-9-]+@users\.noreply\.github\.com$|^noreply@(anthropic|github)\.com$/i;
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
-// 规范 1.6：采集阶段的中间产物不进仓库。
+// 规范 1.6、1.7：采集和验证阶段的产物（含覆盖报告）、图片不进仓库。
 // 与 .gitignore 同步；这里是第二道防线，防止有人用 git add -f 强行加入。
 const FORBIDDEN_FILES = [
   /(^|\/)01-sitemap\.md$/, /(^|\/)02-strings\//, /(^|\/)02-summary\.md$/, /(^|\/)03-residual\.json$/, /(^|\/)03-translations\.tsv$/,
-  /(^|\/)04-[^/]*\.json$/, /(^|\/)04-screenshots\//, /(^|\/)coverage-report[^/]*\.md$/, /(^|\/)glossary\.md$/,
+  /(^|\/)04-[^/]*\.json$/, /(^|\/)04-screenshots\//, /(^|\/)coverage-report[^/]*\.md$/, /-coverage\.md$/, /(^|\/)glossary\.md$/,
   /\.har$/i, /\.log$/i, /(^|\/)\.env(\.|$)/, /\.(pem|key)$/i,
+  /\.(png|jpe?g|webp|gif|svg|bmp|avif)$/i,
 ];
 const TEXT_EXT = new Set(['.md', '.js', '.mjs', '.cjs', '.json', '.yml', '.yaml', '.txt', '.html', '.css', '']);
-// 规范第 4、5 节：覆盖报告和 README 脚本表的固定格式。
+// 规范第 4 节：README 脚本表的固定格式。README 里只允许构建状态和许可证徽章两种图片。
 const STATUSES = ['已验证', '部分验证', '候选版'];
-const REPORT_SECTIONS = ['结论', '验证对象', '页面 × 状态矩阵', '未覆盖与无法覆盖', '豁免规则', '版本记录', '发布前自检'];
+const BADGES = ['https://github.com/asiananlee/zh-cn-userscripts/actions/', 'https://img.shields.io/'];
 const README_HEADER = '| 站点 | 覆盖范围 | 版本 | 状态 | 安装 |';
 const RAW = 'https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/';
 
@@ -207,30 +208,10 @@ function checkScript(file) {
   return [...errors, ...checkDocs(file, version)];
 }
 
-// 规范第 4、5 节：覆盖报告的信息行和章节、README 脚本表里的那一行，都要与脚本头部一致。
+// 规范第 4 节：README 脚本表里的那一行要与脚本头部一致。
 function checkDocs(file, version) {
   const errors = [];
-  const name = basename(file), report = `docs/${site(file)}-coverage.md`;
-  let status = null;
-  if (!existsSync(join(root, report))) errors.push(`缺少覆盖报告 ${report}`);
-  else {
-    const text = readFileSync(join(root, report), 'utf8');
-    const info = text.match(/^脚本：.*$/m)?.[0];
-    if (!info) errors.push(`${report} 标题下缺少信息行「脚本：… · 版本：… · 状态：… · 最后核对：…」`);
-    else {
-      const v = info.match(/版本：(\d+\.\d+\.\d+)/)?.[1];
-      status = info.match(/状态：(\S+)/)?.[1] ?? null;
-      if (v !== version) errors.push(`${report} 写的版本是 ${v ?? '（没写）'}，脚本是 ${version}`);
-      if (!STATUSES.includes(status)) errors.push(`${report} 的状态必须是 ${STATUSES.join('、')} 之一`);
-      if (!/最后核对：\d{4}-\d{2}-\d{2}/.test(info)) errors.push(`${report} 的信息行缺少「最后核对：YYYY-MM-DD」`);
-    }
-    const headings = [...text.matchAll(/^## (.+?)\s*$/gm)].map((m) => m[1]);
-    const missing = REPORT_SECTIONS.filter((h) => !headings.includes(h));
-    const at = REPORT_SECTIONS.map((h) => headings.indexOf(h));
-    if (missing.length) errors.push(`${report} 缺少章节：${missing.map((h) => '## ' + h).join('、')}`);
-    else if (at.some((i, k) => k && i < at[k - 1])) errors.push(`${report} 的章节顺序应为 ${REPORT_SECTIONS.join(' → ')}`);
-  }
-
+  const name = basename(file);
   const readme = existsSync(join(root, 'README.md')) ? readFileSync(join(root, 'README.md'), 'utf8').split(/\r?\n/) : [];
   if (!readme.some((l) => l.trim() === README_HEADER)) errors.push(`README.md 缺少脚本表的表头 ${README_HEADER}`);
   const rows = readme.filter((l) => l.includes(`(${RAW}${name})`));
@@ -238,11 +219,20 @@ function checkDocs(file, version) {
   const cells = rows[0].trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
   if (cells.length !== 5) return [...errors, `README.md 里 ${name} 那一行应有 5 格：站点、覆盖范围、版本、状态、安装`];
   if (cells[2] !== version) errors.push(`README.md 里 ${name} 的版本是 ${cells[2]}，脚本是 ${version}`);
-  if (status && cells[3] !== status) errors.push(`README.md 里 ${name} 的状态是 ${cells[3]}，覆盖报告是 ${status}`);
-  if (!cells[4].startsWith(`[安装](${RAW}${name})`) || !cells[4].includes(`[覆盖报告](${report})`)) {
-    errors.push(`README.md 里 ${name} 的安装格应依次是 [安装](…) 和 [覆盖报告](${report})`);
-  }
+  if (!STATUSES.includes(cells[3])) errors.push(`README.md 里 ${name} 的状态是 ${cells[3]}，必须是 ${STATUSES.join('、')} 之一`);
+  if (cells[4] !== `[安装](${RAW}${name})`) errors.push(`README.md 里 ${name} 的安装格只能是 [安装](${RAW}${name})`);
   return errors;
+}
+
+// 规范 1.7：README 里不放图片，徽章除外。
+function checkReadmeImages() {
+  if (!existsSync(join(root, 'README.md'))) return ['缺少 README.md'];
+  const text = readFileSync(join(root, 'README.md'), 'utf8');
+  const urls = [...text.matchAll(/!\[[^\]]*\]\(\s*([^)\s]+)/g)].map((m) => m[1]);
+  return [
+    ...(/<img\b/i.test(text) ? ['README.md 里不能用 <img> 放图片'] : []),
+    ...urls.filter((u) => !BADGES.some((p) => u.startsWith(p))).map((u) => `README.md 里不能放图片（徽章除外）：${u}`),
+  ];
 }
 
 function checkPrivacy(text) {
@@ -252,32 +242,6 @@ function checkPrivacy(text) {
   const emails = [...new Set(text.match(EMAIL_RE) || [])].filter((e) => !ALLOWED_EMAIL.test(e));
   if (emails.length) errors.push(`包含邮箱（只允许 GitHub noreply 地址）：${emails.length} 个，第一个以 ${emails[0].slice(0, 2)}… 开头`);
   return errors;
-}
-
-// 规范 1.7：截图不能带元数据（设备、时间、路径、软件）。
-// JPEG 只允许 JFIF、ICC 色彩配置和图像数据段；PNG 不允许文字块和 EXIF 块。
-function checkImage(file) {
-  const b = readFileSync(file);
-  const ext = extname(file).toLowerCase();
-  if (ext === '.jpg' || ext === '.jpeg') {
-    for (let i = 2; i < b.length - 4 && b[i] === 0xff; ) {
-      const m = b[i + 1];
-      if (m === 0xda) return [];
-      if ((m >= 0xe1 && m <= 0xef && m !== 0xe2) || m === 0xfe) return [`图片含元数据段 0x${m.toString(16)}（EXIF、XMP 或注释），请去掉后再提交`];
-      i += 2 + b.readUInt16BE(i + 2);
-    }
-    return [];
-  }
-  if (ext === '.png') {
-    for (let i = 8; i < b.length - 8; ) {
-      const len = b.readUInt32BE(i), type = b.toString('latin1', i + 4, i + 8);
-      if (['tEXt', 'zTXt', 'iTXt', 'eXIf'].includes(type)) return [`图片含元数据块 ${type}，请去掉后再提交`];
-      if (type === 'IEND') return [];
-      i += 12 + len;
-    }
-    return [];
-  }
-  return ext === '.webp' || ext === '.gif' ? [`请用 JPG 或 PNG，检查工具不解析 ${ext}`] : [];
 }
 
 function git(...args) { return spawnSync('git', args, { cwd: root, encoding: 'utf8' }); }
@@ -335,12 +299,7 @@ if (only.length) {
     for (const e of checkPrivacy(readFileSync(join(root, f), 'utf8'))) privacy.push(`${f}：${e}`);
   }
   report('全仓库隐私扫描', privacy);
-
-  const images = files.filter((f) => /\.(jpe?g|png|webp|gif)$/i.test(f));
-  report('截图', [
-    ...images.filter((f) => !f.startsWith('docs/images/')).map((f) => `截图只能放在 docs/images/：${f}`),
-    ...images.flatMap((f) => checkImage(join(root, f)).map((e) => `${f}：${e}`)),
-  ]);
+  report('README 里的图片', checkReadmeImages());
 }
 if (base) report(`版本号（相对 ${base}）`, checkVersionBumps(base));
 
