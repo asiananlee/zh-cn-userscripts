@@ -14,7 +14,7 @@
 | [Postmark](https://postmarkapp.com) 账户控制台 | `postmark-zh-cn.user.js` | 0.1.0，部分验证 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/postmark-zh-cn.user.js) |
 | [OpenRouter](https://openrouter.ai) 控制台 | `openrouter-zh-cn.user.js` | 开发中 | 暂未发布 |
 
-**Postmark 0.1.0 的验证范围**：54 类页面做过桌面与手机的实站扫描，覆盖权限、模板、退信等弹窗，SDK 标签页，筛选和图表提示。最后一次补词（账单页四处提示）只做了定向复验，没有全量重放。**未覆盖**：保存、发送、付款后的 Toast 和服务器返回的英文错误，需要真实数据才出现的状态（非空模板、其他成员、归档资源等），以及支付和客服的跨域 iframe。遇到漏译请[提交反馈](https://github.com/asiananlee/zh-cn-userscripts/issues/new/choose)。
+**Postmark 0.1.0 的验证范围**：54 类页面做过桌面与手机的实站扫描，覆盖权限、模板、退信等弹窗，SDK 标签页，筛选和图表提示。最后一次补词（账单页四处提示）只做了定向复验，没有全量重放。**未覆盖**：保存、发送、付款后的 Toast 和服务器返回的英文错误，需要真实数据才出现的状态（非空模板、其他成员、归档资源等），以及支付和客服的跨域 iframe。完整的页面 × 状态矩阵和未覆盖清单见 [Postmark 覆盖报告](docs/postmark-coverage.md)。遇到漏译请[提交反馈](https://github.com/asiananlee/zh-cn-userscripts/issues/new/choose)。
 
 ## 安装
 
@@ -58,6 +58,7 @@
 .
 ├── scripts/                    汉化脚本，一个站点一个 *.user.js
 ├── docs/style-guide.md         译法约定与通用术语表
+├── docs/postmark-coverage.md   Postmark 脚本的覆盖报告
 ├── tools/check-userscripts.mjs 脚本合规检查（CI 与本地通用）
 ├── .github/                    Issue 表单、PR 模板、CI
 ├── CONTRIBUTING.md             贡献指南
