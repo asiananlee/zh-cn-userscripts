@@ -11,7 +11,7 @@ node_modules/
 *.pem
 *.key
 
-# 采集阶段的中间产物：含真实页面内容，只留在仓库之外的工作目录（RULES.md 1.6）
+# 采集阶段的中间产物：含真实页面内容，只留在本机（脚本规范 1.6）
 01-sitemap.md
 02-strings/
 02-summary.md
@@ -25,7 +25,7 @@ glossary.md
 *.har
 *.log
 
-# 截图默认不入库，避免带出个人信息；README 配图放 docs/images/，只用 JPG 或 PNG（RULES.md 1.7）
+# 截图默认不入库，避免带出个人信息；README 配图放 docs/images/，只用 JPG 或 PNG（脚本规范 1.7）
 *.png
 *.jpg
 *.jpeg

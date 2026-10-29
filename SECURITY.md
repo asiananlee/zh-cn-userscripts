@@ -13,7 +13,7 @@
 - `@match` 精确到目标网站
 - 只修改页面文本，不改变页面结构和功能，不读用户输入
 
-约束的完整清单见 [RULES.md 第 2 节](RULES.md#2-安全脚本的固定约束)。其中可以用文本规则判断的部分，由 [tools/check-userscripts.mjs](tools/check-userscripts.mjs) 在每次提交时检查。这个检查**不是安全证明**：它能拦住直白的写法，拦不住刻意绕过的代码，最终靠维护者审阅每一次改动。
+约束的完整清单见[脚本规范第 2 节](docs/script-spec.md#2-安全每个脚本都一样的约束)。其中可以用文本规则判断的部分，由 [tools/check-userscripts.mjs](tools/check-userscripts.mjs) 在每次提交时检查。这个检查**不是安全证明**：它能拦住直白的写法，拦不住刻意绕过的代码，最终靠维护者审阅每一次改动。
 
 ## 更新来源
 
