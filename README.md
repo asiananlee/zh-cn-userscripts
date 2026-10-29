@@ -11,9 +11,10 @@
 
 | 站点 | 脚本 | 状态 | 安装 |
 | --- | --- | --- | --- |
+| [Postmark](https://postmarkapp.com) 账户控制台 | `postmark-zh-cn.user.js` | 0.1.0，部分验证 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/postmark-zh-cn.user.js) |
 | [OpenRouter](https://openrouter.ai) 控制台 | `openrouter-zh-cn.user.js` | 开发中 | 暂未发布 |
 
-脚本发布后，安装链接会补充在这张表里。
+**Postmark 0.1.0 的验证范围**：54 类页面做过桌面与手机的实站扫描，覆盖权限、模板、退信等弹窗，SDK 标签页，筛选和图表提示。最后一次补词（账单页四处提示）只做了定向复验，没有全量重放。**未覆盖**：保存、发送、付款后的 Toast 和服务器返回的英文错误，需要真实数据才出现的状态（非空模板、其他成员、归档资源等），以及支付和客服的跨域 iframe。遇到漏译请[提交反馈](https://github.com/asiananlee/zh-cn-userscripts/issues/new/choose)。
 
 ## 安装
 
