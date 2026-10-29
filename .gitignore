@@ -1,0 +1,27 @@
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+node_modules/
+
+# 凭据：永远不要提交
+.env
+.env.*
+*.pem
+*.key
+
+# 采集阶段的中间产物：可能含邮箱、账号 ID、密钥片段
+02-strings/
+03-residual.json
+*.har
+
+# 截图默认不入库，避免带出个人信息；README 配图放 docs/images/
+*.png
+*.jpg
+*.jpeg
+*.webp
+!docs/images/*.png
+!docs/images/*.jpg
+!docs/images/*.jpeg
+!docs/images/*.webp

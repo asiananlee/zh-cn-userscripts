@@ -1,0 +1,57 @@
+name: 漏译 / 错译
+description: 页面上还有英文，或者译文不准确
+title: "[翻译] "
+labels: ["翻译"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请尽量写清楚位置，维护者才能快速复现。
+        **请勿**在截图或文字里留下 API 密钥、邮箱、账号 ID、订单号、余额等个人信息。
+  - type: input
+    id: script
+    attributes:
+      label: 脚本与版本
+      description: 在 Tampermonkey 的脚本列表里可以看到，例如 openrouter-zh-cn 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: 页面地址
+      description: 去掉网址里的个人参数后再填
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 出现位置与操作步骤
+      description: 例如「设置 → API 密钥 → 点击创建密钥，弹窗里的提示」。弹窗、下拉、提示这类需要操作才出现的内容，请写清触发步骤
+    validations:
+      required: true
+  - type: textarea
+    id: original
+    attributes:
+      label: 原文（英文）
+      description: 直接复制页面上的英文原文
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望的译文
+      description: 选填。是错译的话，写上你认为更准确的译法和理由
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 截图
+      description: 选填。可以直接粘贴或拖入图片。**发布前请先打码**
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我用的是该脚本的最新版
+          required: true
+        - label: 我提供的内容里没有 API 密钥、邮箱、账号 ID 等个人信息（截图已打码）
+          required: true

@@ -1,0 +1,68 @@
+name: 页面错乱 / 功能异常
+description: 装了脚本后布局溢出、按钮点不了，或者控制台报错
+title: "[异常] "
+labels: ["排版/功能"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请先在 Tampermonkey 里**临时关闭该脚本**并刷新页面，确认问题是脚本造成的。
+        **请勿**在截图、日志里留下 API 密钥、邮箱、账号 ID、订单号、余额等个人信息。
+  - type: input
+    id: script
+    attributes:
+      label: 脚本与版本
+      description: 例如 openrouter-zh-cn 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: 浏览器与 Tampermonkey 版本
+      description: 例如 Chrome 130、Tampermonkey 5.3
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: 页面地址
+      description: 去掉网址里的个人参数后再填
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: 现象与操作步骤
+      description: 看到了什么、期望是什么、怎么操作会出现。是布局溢出、文字被截断、按钮失效，还是别的
+    validations:
+      required: true
+  - type: dropdown
+    id: without-script
+    attributes:
+      label: 关闭脚本后是否正常
+      options:
+        - 正常，关闭脚本后问题消失
+        - 仍然有问题，和脚本可能无关
+        - 没有测试
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: 控制台报错
+      description: 选填。按 F12 打开开发者工具，把 Console 里红色的报错复制过来
+      render: shell
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 截图
+      description: 选填。**发布前请先打码**
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我用的是该脚本的最新版
+          required: true
+        - label: 我提供的内容里没有 API 密钥、邮箱、账号 ID 等个人信息（截图已打码）
+          required: true
