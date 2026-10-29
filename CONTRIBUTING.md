@@ -2,6 +2,8 @@
 
 感谢你愿意帮忙。这个项目只做一件事：让网站界面变成准确、统一、不影响使用的简体中文。
 
+所有规则写在 [RULES.md](RULES.md)。本文件只讲怎么参与，规则有出入时以 RULES.md 为准。
+
 ## 语言约定
 
 文档、Issue、PR、提交信息一律使用简体中文。文件名和代码标识符使用英文（ASCII），以兼容网址和各操作系统。
@@ -22,7 +24,7 @@
 
 1. Fork 本仓库，新建分支。
 2. 修改 `scripts/` 下对应的脚本。译法先对照 [翻译规范](docs/style-guide.md)，与已有术语保持一致。
-3. 提高脚本头部的 `@version`（规则见下文）。
+3. 提高脚本头部的 `@version`，并更新开头注释里的「最后核对」日期（版本号规则见 [RULES.md 3.7](RULES.md#37-版本号)）。
 4. 本地运行检查，必须通过（需要 Node.js 18 或更高版本）：
 
    ```bash
@@ -30,63 +32,29 @@
    ```
 
 5. 在真实页面里验证：装上改过的脚本，打开你改动涉及的页面和状态（弹窗、下拉、提示等），确认已翻译、排版正常、功能没受影响。
-6. 提交 PR，按模板填写。
+6. 按 [RULES.md 第 6 节](RULES.md#6-审查清单) 自查，然后提交 PR，按模板填写。
 
-提交信息写法：`站点: 做了什么`。例如 `openrouter: 修正 Rate limit 的译法`、`openrouter: 补充密钥页弹窗译文`。
-
-### 版本号
-
-格式 `主.次.修订`：只改译文或补漏 → 修订号 +1；覆盖了新页面 → 次版本号 +1；脚本结构有大改动 → 主版本号 +1。版本号不变，用户的 Tampermonkey 收不到更新。
+提交信息写法：`站点: 做了什么`。例如 `postmark: 修正账单页译文`、`openrouter: 补充密钥页弹窗译文`。
 
 ## 新增一个站点
 
 先开「新站点请求」Issue 讨论，确认官方没有中文界面、范围合适，再动手。
 
-- 文件放在 `scripts/`，命名为 `站点英文名-zh-cn.user.js`，只用小写字母、数字和连字符，例如 `openrouter-zh-cn.user.js`。
-- 一个站点一个文件，不拆分，不引入构建工具。
-- 头部使用下面的模板，按实际情况改站点名和路径。
+- 流程见 [RULES.md 第 5 节](RULES.md#5-新站点的流程)，脚本的头部、开头注释和代码结构按 [RULES.md 第 3 节](RULES.md#3-每个脚本的固定模式) 的固定模式写。
+- 想让 AI 代理完成采集、制作和验证，用 [docs/new-site-prompts.md](docs/new-site-prompts.md) 里的分阶段提示词。
+- 采集阶段的文件（页面文本、截图原件、自动化脚本）含有真实页面内容，放在仓库之外，不要提交。
+- 每个脚本都要有覆盖报告 `docs/站点英文名-coverage.md`，结构参照 [docs/postmark-coverage.md](docs/postmark-coverage.md)。
 
-```js
-// ==UserScript==
-// @name         OpenRouter 简体中文汉化
-// @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.1.0
-// @description  OpenRouter 控制台界面简体中文汉化
-// @author       asiananlee
-// @license      MIT
-// @homepageURL  https://github.com/asiananlee/zh-cn-userscripts
-// @supportURL   https://github.com/asiananlee/zh-cn-userscripts/issues
-// @match        https://openrouter.ai/*
-// @run-at       document-start
-// @grant        none
-// ==/UserScript==
-```
+## 自动检查
 
-`@downloadURL` 和 `@updateURL` 在脚本正式发布、确定安装地址后再加。
+`node tools/check-userscripts.mjs` 在本地和 CI 里检查 [RULES.md](RULES.md) 里标为 **[自动]** 的规则：头部字段和顺序、禁用写法、`@match` 范围、全仓库的密钥、邮箱和本机路径、禁止入库的文件、提交作者邮箱。CI 还会检查改过的脚本有没有提高版本号。
 
-### 自动检查会拦截的约束
+这是文本规则，宁可误报。注释、字符串和正则里的文字不算调用，所以词典里出现 `Failed to fetch` 这样的英文不会被拦。
 
-运行 `node tools/check-userscripts.mjs` 检查，CI 里也会跑：
-
-- 文件名符合上面的命名规则，`node --check` 语法通过
-- 头部必须有 `@name`、`@namespace`、`@version`（数字三段）、`@description`、`@license`、`@match`，且只有一行 `@grant none`
-- 不能使用 `@require`、`@resource`、`@connect`、`@include`
-- `@match` 不能是全站通配（如 `*://*/*`、主机为 `*` 或 `*.com`）
-- `@downloadURL`、`@updateURL` 只能指向本仓库的 raw 地址或 greasyfork.org
-- 代码里不能出现：`fetch()`、`XMLHttpRequest`、`WebSocket`、`EventSource`、`sendBeacon`、`importScripts`、`eval`、`new Function`、`document.write`、`insertAdjacentHTML`、写入 `innerHTML` / `outerHTML`、`document.cookie`、`GM_*` / `GM.*`、`unsafeWindow`
-- 不能出现疑似 API 密钥或 token 的字符串
-
-这些是文本规则，宁可误报。词典里恰好出现类似写法时，换个写法绕开即可。
-
-### 靠代码审阅的实现要求
-
-- **匹配**：对文本节点的完整规范化文本做精确匹配；含动态值的句子用带 `^` `$` 的正则。**禁止对文本做子串全局替换**（会把 Keyboard 里的 Key 换掉）。
-- **范围**：只修改文本节点的 `nodeValue` 和白名单属性（`placeholder`、`title`、`aria-label`、`alt` 等），不改元素结构。
-- **单页应用**：用 `MutationObserver` 配合节流处理重新渲染，避免脚本自己的修改触发自己；监听路由变化，让按页面区分的译法在不刷新的跳转后仍生效。
-- **跳过区域**：`script`、`style`、`code`、`pre`、`textarea`、`input` 的值和可编辑区域，以及用户内容、第三方内容。
-- **调试开关**：在控制台执行 `localStorage.setItem('站点名.zhCN.debug', '1')`（例如 `postmark.zhCN.debug`）后刷新，脚本在控制台汇总打印未命中词典的英文，用来补漏。每个站点一个键，默认关闭，键名写在脚本开头的注释里。
-- **文件开头注释**：写明覆盖的页面、已知未覆盖的部分、最后核对日期。
+标为 **[审查]** 的规则靠人工核对，见 [RULES.md 第 6 节](RULES.md#6-审查清单)。
 
 ## 数据与隐私
 
-词典、截图、日志、Issue 里都不要出现真实的 API 密钥、邮箱、账号 ID、余额。遇到动态值用占位符，例如 `{n}`、`{amount}`。
+词典、截图、日志、Issue 里都不要出现真实的 API 密钥、邮箱、账号 ID、余额。遇到动态值用占位符，例如 `{n}`、`{amount}`。完整清单见 [RULES.md 第 1 节](RULES.md#1-隐私任何时候都不能出现在仓库里的东西)。
+
+调试输出（`站点名.zhCN.debug`）已经脱敏，但可能仍含页面上的资源名。分享前请逐条检查，不要整段粘贴到公开的 Issue。

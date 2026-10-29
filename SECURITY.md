@@ -8,15 +8,16 @@
 
 - 不发起任何网络请求，不收集、不上传任何数据
 - 不引入外部代码，不使用 Tampermonkey 特权接口（`@grant none`）
-- 不读取 Cookie，不用 `eval`，不写入 `innerHTML`
+- 不读取 Cookie、剪贴板、凭据、`sessionStorage`、`indexedDB`；`localStorage` 只读一个调试开关键，不写入
+- 不用 `eval`，不写入 `innerHTML`
 - `@match` 精确到目标网站
-- 只修改页面文本，不改变页面结构和功能
+- 只修改页面文本，不改变页面结构和功能，不读用户输入
 
-约束的完整清单见 [贡献指南](CONTRIBUTING.md)。其中可以用文本规则判断的部分，由 [tools/check-userscripts.mjs](tools/check-userscripts.mjs) 在每次提交时检查。这个检查**不是安全证明**：它能拦住直白的写法，拦不住刻意绕过的代码，最终靠维护者审阅每一次改动。
+约束的完整清单见 [RULES.md 第 2 节](RULES.md#2-安全脚本的固定约束)。其中可以用文本规则判断的部分，由 [tools/check-userscripts.mjs](tools/check-userscripts.mjs) 在每次提交时检查。这个检查**不是安全证明**：它能拦住直白的写法，拦不住刻意绕过的代码，最终靠维护者审阅每一次改动。
 
 ## 更新来源
 
-脚本的自动更新（如果启用）来自本仓库 `main` 分支。维护者的 GitHub 账号已开启双重验证。外部贡献者的改动只能通过 PR 进入，由维护者审阅后合并。如果你不信任某次更新，可以在 Tampermonkey 里关闭该脚本的自动更新，并自行通读脚本。
+脚本的自动更新（如果启用）来自本仓库 `main` 分支。维护者的 GitHub 账号已开启双重验证。只有维护者有写权限，外部贡献者的改动只能通过 PR 进入，由维护者审阅后合并。如果你不信任某次更新，可以在 Tampermonkey 里关闭该脚本的自动更新，并自行通读脚本。
 
 ## 哪些问题算安全问题
 

@@ -50,7 +50,7 @@ body:
     id: console
     attributes:
       label: 控制台报错
-      description: 选填。按 F12 打开开发者工具，把 Console 里红色的报错复制过来
+      description: 选填。按 F12 打开开发者工具，只复制 Console 里红色的报错。不要粘贴调试输出或整段日志，里面可能有你的资源名或网址
       render: shell
   - type: textarea
     id: screenshot

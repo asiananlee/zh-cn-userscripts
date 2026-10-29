@@ -11,17 +11,26 @@ node_modules/
 *.pem
 *.key
 
-# 采集阶段的中间产物：可能含邮箱、账号 ID、密钥片段
+# 采集阶段的中间产物：含真实页面内容，只留在仓库之外的工作目录（RULES.md 1.6）
+01-sitemap.md
 02-strings/
+02-summary.md
 03-residual.json
+03-translations.tsv
+04-*.json
+04-screenshots/
+coverage-report.md
+coverage-report-*.md
+glossary.md
 *.har
+*.log
 
-# 截图默认不入库，避免带出个人信息；README 配图放 docs/images/
+# 截图默认不入库，避免带出个人信息；README 配图放 docs/images/，只用 JPG 或 PNG（RULES.md 1.7）
 *.png
 *.jpg
 *.jpeg
 *.webp
+*.gif
 !docs/images/*.png
 !docs/images/*.jpg
 !docs/images/*.jpeg
-!docs/images/*.webp

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Postmark 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.1.0
+// @version      0.1.1
 // @description  Postmark 已登录控制台的简体中文界面；保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -12,13 +12,14 @@
 // @grant        none
 // ==/UserScript==
 /*
- * 初版生成：2026-10-28；阶段 4 修订：2026-10-29。依据 54 份实站来源（含布局选项页）。
+ * 最后核对：2026-10-29（初版 2026-10-28）。依据 54 份实站来源（含布局选项页）。
  * 文档站不在范围。document-start 用于尽早监听动态菜单、异步内容和瞬时节点。
  * 已知未覆盖：未采集的表单错误/Toast、创建后页面及未重放的手机弹层组合；
  * MFA/其他成员状态、支付或客服跨域 iframe、封闭 Shadow DOM、canvas/图片文字。
  * 第二轮已做桌面与手机实站扫描；最终版四处账单提示补词只做了定向实站复验，未全量重放。动态候选大多不足两例。
  * 不翻译代码、邮件/日志正文、资源名称、邮箱、API 令牌、URL、数字与金额实值。
  * 调试：localStorage.setItem('postmark.zhCN.debug','1') 后刷新；改为 '0' 后刷新关闭。
+ * 调试输出已脱敏，但可能仍含页面上的资源名；分享前请逐条检查，不要整段粘贴到公开的 Issue。
  */
 (() => {
   'use strict';

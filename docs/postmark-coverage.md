@@ -1,6 +1,6 @@
 # Postmark 汉化脚本覆盖报告
 
-对应脚本：[`scripts/postmark-zh-cn.user.js`](../scripts/postmark-zh-cn.user.js)，版本 0.1.0。更新日期：2026-10-29。
+对应脚本：[`scripts/postmark-zh-cn.user.js`](../scripts/postmark-zh-cn.user.js)，版本 0.1.1（只改了开头注释，代码与 0.1.0 相同）。更新日期：2026-10-29。
 
 ## 结论
 
@@ -18,9 +18,9 @@
 | 匹配范围 | 仅 `https://account.postmarkapp.com/*`，文档站不在范围内 |
 | 运行方式 | `@run-at document-start`，`@grant none` |
 | 验证用的交付文件 | 153307 字节，SHA-256 `82439feb7de946e2b9a8c6b811fa7c164a06c21eefc335c6fed1aa5f2b121b26` |
-| 仓库里发布的文件 | 153397 字节，SHA-256 `69848a271da1f64b95fba6aeccb837a871f38f7661cddcdc8c02c12dd4e1aa1b` |
+| 仓库里发布的文件（0.1.1） | 153522 字节，SHA-256 `209bc81df1cbe6b5dde036d16e8c944ed5868df27d055b1709cf06a2d155d5e8` |
 
-两个文件的差别只在头部元数据（`@namespace`、`@author`、`@license`、`@homepageURL`、`@supportURL`）和开头注释里的两句话；从 `(() => {` 起的代码主体逐字节一致，发布前用 `diff` 核对过。
+两个文件的差别只在头部元数据（`@version`、`@namespace`、`@author`、`@license`、`@homepageURL`、`@supportURL`）和开头注释（改了日期写法和两句过期的话，加了一行调试输出的提醒）；从 `(() => {` 起的代码主体逐字节一致，发布前用 `diff` 核对过。
 
 验证时的安装方式是维护者手动替换 Tampermonkey 里的脚本。扩展里的源码没有回读，所以不能说对**安装副本**逐字节核对过哈希；能确认的是，补词后账单页的三条国家名称和税号提示，在实站上已经看到新译文。
 

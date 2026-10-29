@@ -14,4 +14,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: node tools/check-userscripts.mjs
+        with:
+          fetch-depth: 0
+      - name: 合规与隐私检查
+        run: node tools/check-userscripts.mjs
+      - name: 改过的脚本必须提高版本号
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            echo "没有可比较的上一个版本，跳过"
+          else
+            node tools/check-userscripts.mjs --base "$BASE"
+          fi
