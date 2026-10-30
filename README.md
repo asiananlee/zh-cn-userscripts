@@ -17,6 +17,7 @@
 | --- | --- | --- | --- | --- |
 | [OpenRouter](https://openrouter.ai) | 账户与工作区控制台 `openrouter.ai` | 0.1.1 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/openrouter-zh-cn.user.js) |
 | [Postmark](https://postmarkapp.com) | 账户控制台 `account.postmarkapp.com` | 0.1.1 | 部分验证 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/postmark-zh-cn.user.js) |
+| [Trustpilot](https://business.trustpilot.com) | 商家后台 `businessapp.b2b.trustpilot.com` | 0.1.3 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/trustpilot-zh-cn.user.js) |
 
 **状态**的含义：
 - **已验证**：当前版本在真实网站上重放了全部页面状态。
