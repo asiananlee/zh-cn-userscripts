@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Trustpilot 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.1.3
+// @version      0.1.4
 // @description  Trustpilot 控制台的简体中文界面；保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -17,7 +17,6 @@
  * 覆盖范围：businessapp.b2b.trustpilot.com 已观察到的商家后台界面。
  * 已知未覆盖：付费功能内部、保存或发送后的提示、未触发的错误、
  * 未验证的 hover 提示、Shadow DOM、canvas、图片文字和跨域 iframe 内部。
- * 已验证与未验证的页面状态见对应覆盖报告。
  * 不翻译：客户与账户数据、邮件主题和正文、评论、供应商说明、Cookie 标识、品牌和组件模板名、代码、凭据、URL、数字与金额。
  * document-idle：主文档就绪后首次扫描，减少初始解析争用；后续渲染由 observer 处理。
  * 调试默认关闭：将 localStorage 的 trustpilot.zhCN.debug 设为 '1' 后刷新；设为 '0' 关闭。
@@ -72,16 +71,8 @@
     "数据分析"
   ],
   [
-    "Anime Club",
-    "动漫俱乐部"
-  ],
-  [
     "Apply",
     "应用"
-  ],
-  [
-    "Art Dealer",
-    "艺术品经销商"
   ],
   [
     "Average",
@@ -122,10 +113,6 @@
   [
     "Close",
     "关闭"
-  ],
-  [
-    "Collectibles Store",
-    "收藏品商店"
   ],
   [
     "Continue",
@@ -12817,7 +12804,7 @@
   const PRESERVED = new Set(["API","APIs","BasicLink","Cookies","PayPal","Plus","Premium","Trustpilot","Trustpilot APIs","Trustpilot Business","TrustScore","WooCommerce","Zapier","{user} ({email})","建议使用 JPG 或 PNG，尺寸为 {n}px x {n}px，文件不超过 1MB。","建议至少用 {n} 个词介绍企业。介绍可包含文本；套餐支持时，也可使用 HTML 自定义。添加图片时，建议宽度小于 {n}px、文件小于 5MB，以获得最佳效果。","将 ZIP 文件下载到电脑。","设置 Webhook 后，每当客户撰写、更新或删除评论，你都会立即收到通知。","使用 AI 分析评论中讨论的主题，更清楚地了解客户眼中企业的优势和不足。","通过 Webhook 通知及时掌握评论动态","外部 Webhook 示意图","下载 ZIP 文件","邀请模板使用 [CompanyIdentifier] 占位符，帮助客户识别你的企业。","ABC-{n}","Adult","AED","AFN","ALL","AMD","ANG","AO","AOA","Apple Mail","ARS","AUD","AWG","AZN","BAM","BBD","BDT","BGN","BHD","BIF","BMD","BND","BOB","BOV","BRL","BSD","BTC","BTN","BWP","BYN","BYR","BZD","CAD","Carousel","CDF","CHE","CHF","CHW","CLF","CLP","CNY","COP","COU","CRC","CUC","CUP","CVE","CZK","DJF","DKK","DOP","Dotted","Drop-Down","DZD","EEK","EGP","ERN","ETB","ETH","EUR","Faye","FJD","FKP","Flex","Free","GBP","GEL","GGP","GHC","GHS","GIP","Gmail","GMD","GNF","Go Compare","Grid","Grubhub","GTIN","GTQ","GYD","HKD","HNL","Horizontal","HRK","HTG","HUF","IDR","ILS","IMP","Inbox by Gmail","INR","IQD","IRR","ISK","JEP","JMD","JOD","JPY","KES","KGS","KHR","KMF","KPW","KRW","KWD","KYD","KZT","LAK","LBP","List","List Filtered","LKR","LRD","LSL","LTC","LTL","LVL","LYD","MAD","MDL","MGA","Micro Button","Micro Combo","Micro Review Count","Micro Star","Micro TrustScore","Mini","Mini Carousel","MKD","MMK","MNT","MOP","MPN","MPN1","MRO","MRU","MUR","MVR","MWK","MXN","MXV","MYR","MZN","NAD","NGN","NIO","NOK","NPR","NZD","OMR","Outlook {n}-{n}","Outlook 2010 - 2016","Outlook Webmail","PAB","PEN","PGK","PHP","PKR","PLN","Polyester","Pop-Up","Product Mini","Product Mini MultiSource","Product Reviews","Product Reviews Carousel","Product Reviews Gallery","Product Reviews MultiSource","Product Reviews MultiSource SEO","Product Reviews SEO","PYG","QAR","Quote","Red","Red shoes","Red sports shoes.","RED-SHOES-{n}","Review Collector","RMB","RON","RSD","RUB","RWF","SAR","SBD","SCR","SDG","SEK","Selph","SGD","ShoeBrand","SHP","SKU","Slider","SLL","SOS","Specsavers","Square 标志","SRD","SSP","STD","STN","SVC","SYP","SZL","Team Viewer","THB","Thunderbird","TJS","TMT","TND","TOP","TRL","TrustBox Newsletter","TrustBox Signature","TRY","TTD","TVD","TWD","TZS","UAH","UGX","Unisex","US {n}","USD","UYI","UYU","UYW","UZS","Vecteezy","VEF","VES","VND","VUV","Webhook 通知","WST","XAF","XBT","XCD","XL","XOF","XPF","XS","XSU","XUA","YER","ZAR","ZMW","ZWD","ZWL","Log in with PayPal"]);
 
   if (window.top !== window.self || location.hostname !== 'businessapp.b2b.trustpilot.com') return;
-  const instance = Symbol.for('trustpilot.zhCN.0.1.3');
+  const instance = Symbol.for('trustpilot.zhCN.0.1.4');
   if (window[instance]) return;
   window[instance] = true;
 
