@@ -45,6 +45,7 @@
 | Usage | 用量 | 初稿 | |
 | Logs | 日志 | 初稿 | |
 | Workspace | 工作区 | 初稿 | |
+| Ticket | 工单 | 初稿 | 客服请求 |
 | API key | API 密钥 | 初稿 | |
 | Rate limit | 速率限制 | 初稿 | |
 | Prompt | 提示词 | 初稿 | |
