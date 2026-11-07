@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Text 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.1.1
+// @version      0.1.2
 // @description  Text 登录后后台的简体中文界面；保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -13,7 +13,7 @@
 // @grant        none
 // ==/UserScript==
 /*
- * 最后核对：2026-11-07。按实站旧版的漏译修订；本版本为候选版，已做本地浏览器验证。
+ * 最后核对：2026-11-07。以已安装的 0.1.1 实站界面为基线补漏；本版本为候选版，已做本地浏览器验证。
  * 覆盖范围：www.text.com 登录后后台的收件箱、客户、AI 客服、Playbook、报表、设置及入门引导的已采集界面。
  * 已知未覆盖：HelpDesk 等跨域框架、独立组件定制器、客服窗口、图表文字及图片文字；
  * 真实会话、已连接渠道、非空报表、套餐差异、部分弹窗、错误、Toast 和窄屏布局未在本版本的实站重放中验证。
@@ -97,6 +97,11 @@
     ["Close modal","关闭弹窗"],
     ["Cancel","取消"],
     ["Search Text or go to...","在 Text 中搜索或前往…"],
+    ["Monitor website traffic, chat with visitors in real time, create personalized campaigns, and more!","监测网站流量、与访客实时聊天、创建个性化活动等。"],
+    ["Invite","邀请"],
+    ["Search","搜索"],
+    ["Notifications","通知"],
+    ["Log out","退出登录"],
   ];
   const COMMON_RULES = [];
   const SCOPES = [
@@ -205,6 +210,8 @@
         ["Followers","关注者"],
         ["Rating","评分"],
         ["Attachments","附件"],
+        ["Archive list","归档列表"],
+        ["Chat list header","聊天列表标题"],
       ],
       rules: [],
       overrides: [],
@@ -265,6 +272,8 @@
         ["Email","电子邮箱"],
         ["Supervised","监督中"],
         ["Queued","排队中"],
+        ["Leads","线索"],
+        ["Filter controls","筛选控件"],
       ],
       rules: [],
       overrides: [],
@@ -324,6 +333,12 @@
         ["File","文件"],
         ["Article","文章"],
         ["Knowledge | Copilot | Team | Text App","知识库｜Copilot｜团队｜Text App"],
+        ["View","查看"],
+        ["Open AI Agent profile","打开 AI 客服资料"],
+        ["Knowledge sources","知识来源"],
+        ["Accepting chats","接收聊天中"],
+        ["Name","名称"],
+        ["Added by","添加者"],
       ],
       rules: [],
       overrides: [],
@@ -411,6 +426,7 @@
         ["Add leads to marketing tools","将线索添加到营销工具"],
         ["Add leads to Mailchimp","将线索添加到 Mailchimp"],
         ["Add leads to HubSpot","将线索添加到 HubSpot"],
+        ["Search template…","搜索模板…"],
       ],
       rules: [],
       overrides: [],
@@ -605,8 +621,12 @@
         ["One time","仅发送一次"],
         ["Recurring","定期发送"],
         ["Date range","日期范围"],
+        ["Set up AI Agent","设置 AI 客服"],
+        ["Save view","保存视图"],
+        ["(Last 7 days)","（过去 7 天）"],
+        ["Teammate performance (tickets)","成员表现（工单）"],
       ],
-      rules: [["{n} days","{n} 天","[class*=\"_date-filter-container_\"]"],["vs {n} for previous period","上一时段：{n}","[class*=\"_metric-basic-info__compare_\"]","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"],["vs {n} on avg. for previous period","上一时段平均：{n}","[class*=\"_metric-basic-info__compare_\"]","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"]],
+      rules: [["{n} days","{n} 天","[class*=\"_date-filter-container_\"]"],["vs {n} for previous period","上一时段：{n}","[class*=\"_metric-basic-info__compare_\"]","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"],["vs {n} on avg. for previous period","上一时段平均：{n}","[class*=\"_metric-basic-info__compare_\"]","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"],["{n} of {n} visitors","{n} / {n} 位访客","[class*=\"_summary-card__counts_\"]","\\d+(?:[,.]\\d+)*"],["{n} of {n} campaigns","{n} / {n} 个活动","[class*=\"_summary-card__counts_\"]","\\d+(?:[,.]\\d+)*"],["{n} of {n} chats","{n} / {n} 次聊天","[class*=\"_summary-card__counts_\"]","\\d+(?:[,.]\\d+)*"]],
       overrides: [],
       fragments: [{ path: /^\/app\/reports\/exports\/scheduled\/?$/, selector: "[class*=\"_empty-state__description_\"]", source: "Get reports emailed to selected teammates on a regular basis.", parts: ["Get reports emailed to selected teammates","on a regular basis."], target: ["通过邮件向指定成员","定期发送报表。"] }],
     },
@@ -847,10 +867,84 @@
         ["Use one specific language for all summaries","所有摘要使用同一种指定语言"],
         ["Amount","金额"],
         ["or","或"],
+        ["Chat notification banners","聊天横幅通知"],
+        ["Ticket notification banners","工单横幅通知"],
+        ["Spam","垃圾邮件"],
+        ["Owner","所有者"],
+        ["About","基本信息"],
+        ["Organization name","组织名称"],
+        ["Enter organization name","输入组织名称"],
+        ["Industry","行业"],
+        ["Search industry","搜索行业"],
+        ["Company size","公司规模"],
+        ["Select company size","选择公司规模"],
+        ["Audience","受众"],
+        ["Select audience types","选择受众类型"],
+        ["Website address","网站地址"],
+        ["Mobile phone number","手机号码"],
+        ["Address","地址"],
+        ["Street","街道地址"],
+        ["Enter street address","输入街道地址"],
+        ["City","城市"],
+        ["Enter city","输入城市"],
+        ["State / Province / Region","州、省或地区"],
+        ["Enter state","输入州、省或地区"],
+        ["ZIP code","邮政编码"],
+        ["Enter ZIP code","输入邮政编码"],
+        ["Country","国家或地区"],
+        ["Social media","社交媒体"],
+        ["X (previously Twitter)","X（原 Twitter）"],
+        ["Preview","预览"],
+        ["If a chat doesn't match a rule, route it to","如果聊天不符合任何规则，将其分配给"],
+        ["Increment value","增加数值"],
+        ["Decrement value","减少数值"],
+        ["About chat availability","了解聊天可用性"],
+        ["Create your first ticket field","创建第一个工单字段"],
+        ["Add extra information to tickets, manually or via API.","手动或通过 API 为工单添加更多信息。"],
+        ["Create ticket field","创建工单字段"],
+        ["Qualification","线索资格"],
+        ["Customer context","客户信息"],
+        ["Get a personal access token","获取个人访问令牌"],
+        ["MCP server URL","MCP 服务器地址"],
+        ["Detected","已检测到"],
+        ["Allow members to ban customers","允许成员封禁客户"],
+        ["No banned customers yet","暂无被封禁的客户"],
+        ["Ban customers who are abusive or disrupt your work.","封禁辱骂他人或干扰工作的客户。"],
+        ["Page name","页面名称"],
+        ["Phone number","电话号码"],
+        ["Instagram account","Instagram 账号"],
+        ["Get started with Text APIs","开始使用 Text API"],
+        ["Keep customer data in sync with HubSpot","将客户数据与 HubSpot 同步"],
+        ["Sync your customer fields to HubSpot and use them in segments, workflows, and reports.","将客户字段同步到 HubSpot，并在分群、工作流和报表中使用。"],
+        ["View guide","查看指南"],
+        ["Turn Shopify order events into tickets","将 Shopify 订单事件转为工单"],
+        ["Create tickets from order events in your stores with customer context and order details.","根据店铺订单事件创建工单，并附上客户资料和订单详情。"],
+        ["Track Text performance in Google Sheets","在 Google Sheets 中追踪 Text 表现"],
+        ["Combine multiple reports into a single dashboard and track support trends over time.","将多份报表汇总到同一仪表盘，长期追踪客服趋势。"],
+        ["Available APIs","可用 API"],
+        ["Reports API","报表 API"],
+        ["Export Text data to your dashboards and BI tools","将 Text 数据导出到仪表盘和商业智能工具"],
+        ["Agent Chat API","客服聊天 API"],
+        ["Send messages and manage chats on behalf of agents and bots","代表客服和机器人发送消息并管理聊天"],
+        ["Configuration API","配置 API"],
+        ["Manage Text settings and resources from external systems","从外部系统管理 Text 设置和资源"],
+        ["Customer Chat API","客户聊天 API"],
+        ["Let customers chat with your team from your own interface","让客户在你自己的界面与团队聊天"],
+        ["Tickets API","工单 API"],
+        ["Create and manage tickets from external tools","通过外部工具创建和管理工单"],
+        ["Chat Widget JavaScript API","聊天组件 JavaScript API"],
+        ["Control how the chat widget works on your website","控制聊天组件在你网站上的行为"],
+        ["Language Detection API","语言检测 API"],
+        ["Detect the language customers use in conversations","检测客户在会话中使用的语言"],
+        ["Available SDKs","可用 SDK"],
+        ["Accounts SDK","账户 SDK"],
+        ["Customer SDK","客户 SDK"],
+        ["Manage profile","管理个人资料"],
+        ["Add working hours","添加工作时间"],
       ],
-      rules: [],
+      rules: [["Chat tags ({n})","聊天标签（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Ticket tags ({n})","工单标签（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Chat responses ({n})","聊天快捷回复（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Ticket responses ({n})","工单快捷回复（{n}）","[role=tab] [class*=\"_tab__label_\"]"]],
       overrides: [["General","通用"]],
-      fragments: [{ path: /^\/app\/settings\/chats\/chat-transcripts\/?$/, selector: "[class*=\"_chat-transcripts-fields__label_\"]", source: "Send chat transcripts after each chat to up to 5 email addresses.", parts: ["Send chat transcripts after each chat to up to","5","email addresses."], target: ["每次聊天结束后，最多可将聊天记录发送至","5","个电子邮件地址。"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow teammates to share files", parts: ["Allow","teammates","to share files"], target: ["允许","成员","分享文件"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow customers to share files", parts: ["Allow","customers","to share files"], target: ["允许","客户","分享文件"] }],
+      fragments: [{ path: /^\/app\/settings\/chats\/chat-transcripts\/?$/, selector: "[class*=\"_chat-transcripts-fields__label_\"]", source: "Send chat transcripts after each chat to up to 5 email addresses.", parts: ["Send chat transcripts after each chat to up to","5","email addresses."], target: ["每次聊天结束后，最多可将聊天记录发送至","5","个电子邮件地址。"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow teammates to share files", parts: ["Allow","teammates","to share files"], target: ["允许","成员","分享文件"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow customers to share files", parts: ["Allow","customers","to share files"], target: ["允许","客户","分享文件"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no teammate replies to a new chat, transfer to another teammate after minutes", parts: ["If no teammate replies to a new chat,","transfer to another teammate","after","minutes"], target: ["如果没有成员回复新聊天，","转接给另一位成员","前等待","分钟"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no new messages are sent, mark chat as inactive after minutes", parts: ["If no new messages are sent,","mark chat as inactive","after","minutes"], target: ["如果没有新消息，","标记聊天为不活跃","前等待","分钟"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no new messages are sent, close chat after minutes", parts: ["If no new messages are sent,","close chat","after","minutes"], target: ["如果没有新消息，","关闭聊天","前等待","分钟"] }, { path: /^\/app\/settings\/customers\/customer-fields\/?$/, selector: "[class*=\"_customer-custom-fields-empty-state__content_\"] [class*=\"_empty-state__description_\"]", source: "Customer fields collect the details that matter about your customers. Qualification fields decide which leads show up in Qualified leads. Customer context fields keep useful details for your team.", parts: ["Customer fields collect the details that matter about your customers.","Qualification","fields decide which leads show up in Qualified leads.","Customer context","fields keep useful details for your team."], target: ["客户字段用于收集重要的客户信息。","线索资格","字段决定哪些线索会显示在“合格线索”中。","客户信息","字段为团队保留有用的客户资料。"] }],
     },
     // O onboarding：/app/onboarding 及其子路径。
     { id: "O", slug: "onboarding", path: /^\/app\/onboarding(?:\/|$)/,
@@ -878,7 +972,7 @@
   const BLOCK = [
     'script,style,noscript,code,pre,kbd,iframe,canvas,svg,textarea,input[type=password]',
     EDITABLE, 'read-frog,read-frog-selection,[role=log],td,[role=cell]',
-    '[class*="_avatar"],[class*="_profile-popover-card"],[class*="_profile-menu__user"]',
+    '[class*="_avatar"],[class*="_profile-popover-card"],[class*="_profile-menu__user"],[class*="_profile-menu-header_"]',
     '[class*="_message-list-item"],[class*="_ticket-list__item"],[class*="_ticket-thread_"],[class*="_chat-thread_"]',
     '[class*="_message-bubble"],[class*="_message-event"],[class*="_message-attachments"],[class*="_chat-card-transcript"]',
     '[class*="_ticket-feed-header__title"],[class*="_chat-feed-header__title"],[class*="_message-box__content-editable"]',
@@ -897,6 +991,7 @@
     '[class*="_empty-state_"],[class*="_message-box__custom-placeholder_"],#install-code',
     'th,[role=columnheader],[role=tooltip],[class*="_skills__section-title_"]',
     '[class*="_report-share-popover__header_"],[class*="_modal__heading_"]',
+    '[class*="_install-code-reminder-modal_"] :is([class*="_modal__introduction-heading_"],[class*="_modal__introduction-body_"])',
   ].join(',');
   const MAIN = '[class*="_app-frame-content__page-content-container__content-wrapper__content_"]';
   const REPORT_COPY = [
@@ -905,16 +1000,23 @@
     '[class*="_summary-card_"],[class*="_chart-card-title_"],[class*="_recommended-actions__body_"]',
     '[class*="_promo-banner__content_"],[class*="_mobile-promo-banner__store-link_"],[class*="_report-generated-at_"]',
     '[class*="_filterButton__content__label_"],[class*="_column-label_"],[class*="_target-label_"]',
+    '[class*="_donut-chart-container__value_"],[class*="_top-topics-heading_"]',
+    '[class*="_subtitle-trigger_"],[class*="_campaign-conversion-breakdown__actions_"] a',
   ].join(',');
-  const SAFE_SETTINGS_COPY = /^\/app\/settings\/(?:notifications|desktop-app|channels|websites|email\/forwarding-addresses|whatsapp|messenger|instagram|telegram|twilio|sms-promo|chat-page|routing\/chat-routing|chats\/(?:chat-timeout|chat-transcripts|ai-summary)|chat-availability|tickets\/ticket-fields|customers\/customer-fields|security\/(?:trusted-domains|banned-customers|spam|file-sharing|login))(?:\/|$)/;
+  const SAFE_SETTINGS_COPY = /^\/app\/settings\/(?:notifications|company-details|desktop-app|channels|websites|integrations\/(?:api-usage|mcp|api-access\/apis-sdks)|email\/forwarding-addresses|whatsapp|messenger|instagram|telegram|twilio|sms-promo|chat-page|routing\/chat-routing|chats\/(?:chat-timeout|chat-transcripts|ai-summary)|chat-availability|tickets\/ticket-fields|customers\/customer-fields|security\/(?:trusted-domains|banned-customers|spam|file-sharing|login))(?:\/|$)/;
   const FORM_LABEL = 'label,legend,summary,[class*="_form-field__label_"],[class*="_field-label_"]';
   const CONTROL = 'button,[role=tab],[role=checkbox],[role=radio],' + FORM_LABEL;
   const BUTTON_INPUT = 'input[type=button],input[type=submit],input[type=reset]';
   const PICKER = '[role=listbox],[role=option],[role=combobox],[class*="_combobox__option"]';
   const SKILL_CARD = '[class*="_skill-card_"]';
   const FILE_SHARING_LABEL = '[class*="_file-sharing__checkbox_"] [class*="_checkbox__text_"]';
-  const FRAGMENT_ROOT = '[class*="_empty-state__description_"],[class*="_chat-transcripts-fields__label_"],' + FILE_SHARING_LABEL;
+  const CHAT_TIMEOUT = '[class*="_timeout-settings_"]:has(> [class*="_timeout-settings__input_"])';
+  const FRAGMENT_ROOT = '[class*="_empty-state__description_"],[class*="_chat-transcripts-fields__label_"],' + FILE_SHARING_LABEL + ',' + CHAT_TIMEOUT;
   const TICKET_FILTER_TRIGGER = '[class*="_ticket-list-filters-action-menu__trigger_"]';
+  const TICKET_FILTER_FIELDS = '[class*="_ticket-list-filters-tags__filters_"]';
+  const REPORT_EXPORT = /^\/app\/reports\/exports\/send\/?$/;
+  const REPORT_CONTENT_PICKER = '[class*="_send-report-export-container_"] [class*="_single-picker_"]';
+  const PICKER_LABEL = '[role=listbox] [class*="_picker-option__label_"]';
   const TEMPLATE_PANEL = '[class*="_templates-picker__panel_"]';
   const POPUP_ITEMS = new Map([
     ['Show filters', ['Teammate', 'Tag', 'Status', 'Creation date', 'Last activity', 'Assignment', 'Last message',
@@ -922,7 +1024,8 @@
     ['Filter', ['Teammate', 'Priority', 'Tag', 'Team', 'Source', 'Language']],
     ['View and layout options', ['Column layout', 'Table layout']],
     ['Add new ticket or channel', ['Create ticket', 'Share chat page', 'Create automation', 'Invite teammates', 'Set up AI Agent', 'Connect channel']],
-    ['Open profile menu', ['Show menu labels', 'Show navigation labels', 'Download apps', 'Download mobile app', 'Download desktop app']],
+    ['Open profile menu', ['Show menu labels', 'Show navigation labels', 'Notifications', 'Download apps', 'Download mobile app',
+      'Download desktop app', 'Log out']],
     ['Invite', ['Invite teammate', 'Create AI Agent']],
     ['More actions for', ['Edit', 'Change name', 'Duplicate', 'Deactivate']],
     ['Create new skill', ['For your workspace', 'Runs on any event — tickets, chats, apps, schedule — or on demand.', 'For your AI Agent', "Runs inside your AI Agent's chats."]],
@@ -945,8 +1048,8 @@
   const edges = (raw, next) => raw.match(/^\s*/u)[0] + next + raw.match(/\s*$/u)[0];
   function compileRules(rules) {
     return rules.map(([source, target, within, quantity = '\\d+']) => {
-      const [before, after] = source.split('{n}');
-      return { pattern: new RegExp('^' + escape(before) + '(' + quantity + ')' + escape(after) + '$', 'u'), target, within };
+      const pattern = source.split('{n}').map(escape).join('(' + quantity + ')');
+      return { pattern: new RegExp('^' + pattern + '$', 'u'), target, within };
     });
   }
   const common = new Map(COMMON_EXACT);
@@ -987,12 +1090,12 @@
     return written && raw === written.output ? written.source : raw;
   }
 
-  function triggerLabel(menu) {
-    const direct = originalAttr(menu, 'aria-label');
-    if (direct) return norm(direct);
-    const id = menu.getAttribute('aria-labelledby')?.trim().split(/\s+/, 1)[0];
-    const labelled = id && document.getElementById(id);
-    const trigger = labelled?.matches(TICKET_FILTER_TRIGGER) ? labelled.querySelector(':scope > button[aria-label]') : labelled;
+  function labelledBy(el) {
+    const id = el.getAttribute('aria-labelledby')?.trim().split(/\s+/, 1)[0];
+    return id ? document.getElementById(id) : null;
+  }
+
+  function controlLabel(trigger) {
     if (!trigger?.matches('button,[role=button]')) return '';
     const label = originalAttr(trigger, 'aria-label');
     if (label) return norm(label);
@@ -1005,7 +1108,30 @@
     return norm(parts.join(' '));
   }
 
+  function triggerLabel(menu) {
+    if (menu.matches('ul[class*="_rich-menu__list_"]') && menu.querySelector('[class*="_profile-menu-header_"]') &&
+        menu.querySelector('[class*="_profile-menu-footer_"]')) return 'Open profile menu';
+    const direct = originalAttr(menu, 'aria-label');
+    if (direct) return norm(direct);
+    const labelled = labelledBy(menu);
+    return controlLabel(labelled?.matches(TICKET_FILTER_TRIGGER) ? labelled.querySelector(':scope > button[aria-label]') : labelled);
+  }
+
   const translationFor = key => scope?.overrides.get(key) ?? scope?.exact.get(key) ?? common.get(key);
+
+  function pickerAllows(listbox, key) {
+    if (scope?.id === 'I' && /^\/app\/inbox\/tickets\/grid\//.test(path)) {
+      const trigger = labelledBy(listbox);
+      const label = trigger?.closest(TICKET_FILTER_FIELDS) &&
+        controlLabel(trigger.querySelector('button[class*="_filterButton__main_"]'));
+      return (label === 'Status' || label === translationFor('Status')) &&
+        ['Open', 'Pending', 'On hold', 'Solved', 'Closed'].includes(key);
+    }
+    if (!REPORT_EXPORT.test(path) || !listbox.id || !listbox.closest('[class*="_picker-options_"]')) return false;
+    // 收件人成员选择器也用 listbox；只有“报表内容”的控制关系才允许翻译选项。
+    const control = REPORT_CONTENT_PICKER + ' button[role=combobox][aria-expanded=true][aria-controls="' + CSS.escape(listbox.id) + '"]';
+    return !!document.querySelector(control) && ['Chats', 'Tickets', 'Teammate performance (tickets)'].includes(key);
+  }
 
   function menuAllows(menu, key) {
     let label = triggerLabel(menu);
@@ -1036,18 +1162,26 @@
       return attr === 'placeholder' || attr === 'aria-label' || attr === 'title' ||
         (attr === 'value' && el.matches(BUTTON_INPUT));
     }
-    if (scope?.id === 'R' && /\/exports\/send\/?$/.test(path) &&
-        el.closest('[class*="_send-report-export-container_"]') &&
-        (el.matches('[role=textbox][class*="_picker-trigger-empty-state__placeholder_"]') ||
-         el.closest('[class*="_single-picker_"] [class*="_picker-trigger-item__content_"]'))) return true;
-    if (el.closest(PICKER)) return false;
+    if (el.matches('[role=textbox][class*="_picker-trigger-empty-state__placeholder_"]')) return true;
+    if (REPORT_EXPORT.test(path) && el.closest(REPORT_CONTENT_PICKER + ' [class*="_picker-trigger-item__content_"]')) return true;
+    if (attr === 'aria-label' && el.matches('button[role=combobox][class*="_picker-trigger_"]') &&
+        ['Select option', 'Search options'].includes(norm(originalAttr(el, attr) || ''))) return true;
+    if (el.closest(PICKER)) return !!el.closest(PICKER_LABEL);
+    if (attr === 'aria-label' && el.matches('[role=search][class*="_search-input_"]')) return true;
     if (el.matches('[class*="_search__text--full_"]') && el.closest('[class*="_search__container_"]')) return true;
     if (attr === 'aria-label' && el.matches('[class*="_counter_"][role=button]') &&
         el.closest('[class*="_counter-details-popover-trigger_"]')) return true;
     if (scope?.id === 'P' && el.closest(TEMPLATE_PANEL + ',[class*="_skill-template-card_"]')) return true;
-    if (scope?.id === 'I' && el.closest('[class*="_ticket-info__details-metadata_"] [class*="_details-card-info__label_"]')) return true;
-    if (scope?.id === 'A' && /\/profile\/?$/.test(path) &&
-        el.closest('[class*="_simple-picker_"][role=button]')) return true;
+    if (scope?.id === 'I' && (el.closest('[class*="_ticket-info__details-metadata_"] [class*="_details-card-info__label_"]') ||
+        attr === 'aria-label' && (el.matches('[class*="_archive-list__container_"]') ||
+          /\/channel-promo\//.test(path) && el.parentElement?.matches(MAIN)))) return true;
+    if (scope?.id === 'C' && attr === 'aria-label' && el.matches('[class*="_campaigns-filters__left_"]')) return true;
+    if (scope?.id === 'A' && (
+      el.closest('[class*="_teams-moved-banner__link_"],[class*="_setup-tiles_"] [class*="_tile_"]') ||
+      (attr === 'aria-label' && el.matches('a[class*="_agent-identity_"]')) ||
+      (/\/profile\/?$/.test(path) && el.closest('[class*="_simple-picker_"][role=button],[class*="_language-block_"][role=button],' +
+        '[class*="_state-preview__content_"] > span:first-child'))
+    )) return true;
     if (el.closest('[role=menu]')) return true; // 仅在已识别的静态菜单里匹配下方词条。
     if (el.closest(HEADER)) {
       return !CUSTOM_VIEW.test(path) && !el.closest('[class*="_ticket-feed_"],[class*="_chat-feed_"]');
@@ -1055,13 +1189,23 @@
     if (el.closest(UI_PANEL) || el.closest(CONTROL) || el.closest(SKILL_CARD)) return true;
     if (!scope || !el.closest(MAIN)) return false;
     if (scope.id === 'S' && (
-      (/\/notifications\/?$/.test(path) && el.closest('[class*="_switch-item__label_"]')) ||
+      (/\/notifications\/?$/.test(path) && el.closest('[class*="_switch-item__label_"],[class*="_notifications-settings__footer_"] a')) ||
+      (/\/company-details\/?$/.test(path) && el.closest('[class*="_tag__content_"]')) ||
       (/\/desktop-app\/?$/.test(path) && el.closest('[class*="_promo__header-copy_"]')) ||
       (/\/websites\/?$/.test(path) && el.closest('[class*="_websites-settings-empty-state__main_"]')) ||
-      (/\/chat-availability\/?$/.test(path) && el.closest('[class*="_messaging-mode-selector__label_"]')) ||
-      (/\/chats\/ai-summary\/?$/.test(path) && el.closest('[class*="_summary-language_"]'))
+      (/\/whatsapp\/?$/.test(path) && el.closest('[class*="_whatsapp-header__right-node_"] a')) ||
+      (/\/chat-page\/?$/.test(path) && el.closest('[class*="_content-header__right-node_"] a')) ||
+      (/\/routing\/chat-routing\//.test(path) && el.closest('[class*="_route-fallback__label-row_"]')) ||
+      (/\/chat-availability\/?$/.test(path) && el.closest('[class*="_messaging-mode-selector__label_"],[class*="_availability__info-icon_"]')) ||
+      (/\/chats\/chat-timeout\/?$/.test(path) && el.closest(CHAT_TIMEOUT)) ||
+      (/\/chats\/ai-summary\/?$/.test(path) && el.closest('[class*="_summary-language_"]')) ||
+      (/\/customers\/customer-fields\/?$/.test(path) && el.closest('[class*="_category-preview_"] [class*="_details-card__label__content_"]')) ||
+      (/\/integrations\/api-usage\/?$/.test(path) && attr === 'aria-label' &&
+        el.matches('[class*="_api-usage-empty-state__cards_"] a[class*="_action-card_"]')) ||
+      (/\/integrations\/api-access\/apis-sdks\/?$/.test(path) && el.closest('[class*="_apis-sdks_"]'))
     )) return true;
     if (scope.id === 'R' && (el.closest(REPORT_COPY) ||
+        (/\/customers\/leads-conversion\/?$/.test(path) && el.closest('[class*="_setup-prompt_"],[class*="_sources-row_"]')) ||
         el.matches('[class*="_send-report-export-container_"] form > div > div > div > span') ||
         (attr && el.matches('[class*="_overview-section_"],[class*="_sortable-item__draggable_"],[class*="_filterButton_"],' +
           '[class*="_range-date-picker__custom-trigger_"],[role=tablist][class*="_tabs__list_"]')) ||
@@ -1079,13 +1223,17 @@
     if (el.closest('[class*="_modal__heading_"]') && !['Create new chat tag', 'Add widget to your website', 'Invite teammates'].includes(key)) return null;
     const menu = el.closest('[role=menu]');
     if (menu && !menuAllows(menu, key)) return null;
+    if (el.closest(PICKER_LABEL) && !pickerAllows(el.closest('[role=listbox]'), key)) return null;
     const exact = translationFor(key);
     if (exact !== undefined) return edges(raw, exact);
     for (const rules of [scope?.rules || [], commonRules]) {
       for (const rule of rules) {
         if (rule.within && !el.closest(rule.within)) continue;
         const match = rule.pattern.exec(key);
-        if (match) return edges(raw, rule.target.replace('{n}', match[1]));
+        if (match) {
+          let index = 1;
+          return edges(raw, rule.target.replace(/\{n\}/g, () => match[index++]));
+        }
       }
     }
     if (debug && missed.size < 100 && key.length <= 120 && el.closest(DEBUG_UI) &&
@@ -1206,6 +1354,11 @@
         if (blocked(node) || (record.attributeName === 'value' && !node.matches(BUTTON_INPUT))) continue;
         const saved = attrMemory.get(node)?.get(record.attributeName);
         if (saved && node.getAttribute(record.attributeName) === saved.output) continue;
+        if (REPORT_EXPORT.test(path) && (record.attributeName === 'aria-controls' || record.attributeName === 'aria-expanded') &&
+            node.matches(REPORT_CONTENT_PICKER + ' button[role=combobox]')) {
+          const id = node.getAttribute('aria-controls');
+          if (id) schedule(document.getElementById(id));
+        }
         schedule(node);
       } else {
         const fragment = node.nodeType === Node.ELEMENT_NODE && node.closest(FRAGMENT_ROOT);
@@ -1216,7 +1369,7 @@
   });
   observer.observe(document, {
     childList: true, subtree: true, characterData: true, attributes: true,
-    attributeFilter: [...ATTRS, 'class', 'role', 'href', 'contenteditable'],
+    attributeFilter: [...ATTRS, 'class', 'role', 'href', 'contenteditable', 'aria-labelledby', 'aria-controls', 'aria-expanded'],
   });
   const rescan = () => schedule(document.documentElement);
   window.addEventListener('popstate', rescan);
