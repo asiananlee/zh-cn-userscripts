@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Text 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.1.0
+// @version      0.1.1
 // @description  Text 登录后后台的简体中文界面；保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -13,10 +13,10 @@
 // @grant        none
 // ==/UserScript==
 /*
- * 最后核对：2026-11-07。候选版，原文来自实站；脚本仅做本地验证，尚未在实站运行。
+ * 最后核对：2026-11-07。按实站旧版的漏译修订；本版本为候选版，已做本地浏览器验证。
  * 覆盖范围：www.text.com 登录后后台的收件箱、客户、AI 客服、Playbook、报表、设置及入门引导的已采集界面。
  * 已知未覆盖：HelpDesk 等跨域框架、独立组件定制器、客服窗口、图表文字及图片文字；
- * 真实会话、已连接渠道、非空报表、套餐差异、部分弹窗、错误、Toast 和窄屏布局未验证。
+ * 真实会话、已连接渠道、非空报表、套餐差异、部分弹窗、错误、Toast 和窄屏布局未在本版本的实站重放中验证。
  * 不翻译聊天、工单标题与正文、客户和资源名称、自定义内容、代码、凭据、网址、金额及实际数据。
  * 调试：将 localStorage 中的 text.zhCN.debug 设为 1 后刷新开启，设为 0 后刷新关闭。
  * 调试仅在已知的界面区域记录脱敏后的未匹配项，最多 100 条。
@@ -96,6 +96,7 @@
     ["Maybe later","稍后再说"],
     ["Close modal","关闭弹窗"],
     ["Cancel","取消"],
+    ["Search Text or go to...","在 Text 中搜索或前往…"],
   ];
   const COMMON_RULES = [];
   const SCOPES = [
@@ -198,6 +199,12 @@
         ["Unassigned | Tickets | Inbox | Text App","未分配｜工单｜收件箱｜Text App"],
         ["Column layout","分栏布局"],
         ["Table layout","表格布局"],
+        ["Oldest","最早"],
+        ["Creation date","创建日期"],
+        ["Last activity","最近活动"],
+        ["Followers","关注者"],
+        ["Rating","评分"],
+        ["Attachments","附件"],
       ],
       rules: [],
       overrides: [],
@@ -254,6 +261,10 @@
         ["Scheduled | Campaigns | Customers | Text App","已安排｜活动｜客户｜Text App"],
         ["Inactive Campaigns","未启用的活动"],
         ["Inactive | Campaigns | Customers | Text App","未启用｜活动｜客户｜Text App"],
+        ["Name","姓名"],
+        ["Email","电子邮箱"],
+        ["Supervised","监督中"],
+        ["Queued","排队中"],
       ],
       rules: [],
       overrides: [],
@@ -331,6 +342,75 @@
         ["Templates","模板"],
         ["Search templates","搜索模板"],
         ["Close templates","关闭模板"],
+        ["Template card: Create ticket out of bad ratings","模板卡片：根据差评创建工单"],
+        ["Create ticket out of bad ratings","根据差评创建工单"],
+        ["Deactivate skill","停用技能"],
+        ["Skill for creating a ticket out of bad ratings","根据差评创建工单的技能"],
+        ["See more","查看更多"],
+        ["Template card: Product insurance upsell","模板卡片：推荐购买产品保险"],
+        ["Product insurance upsell","推荐购买产品保险"],
+        ["When a customer buys or asks about a high-value product, the agent proactively offers insurance or an extended warranty - turning a support moment into additional revenue.","当客户购买或咨询高价商品时，客服会主动推荐保险或延保，为业务增加收入。"],
+        ["Try this","试用此模板"],
+        ["Template card: Close every new lead from chat","模板卡片：促成聊天中新线索成交"],
+        ["Close every new lead from chat","促成聊天中新线索成交"],
+        ["When a first-time visitor's chat ends, a qualified lead lands in Salesforce - before anyone manually touches anything.","首次访客结束聊天后，合格线索会自动进入 Salesforce，无需人工操作。"],
+        ["Template card: Checkout coupon issuer","模板卡片：发放结账优惠券"],
+        ["Checkout coupon issuer","发放结账优惠券"],
+        ["When a customer hesitates on the checkout page, the agent offers a personalized discount code and tags the chat as \"sales\" - closing the deal before they leave.","当客户在结账页犹豫时，客服会提供专属优惠码，并为聊天添加「销售」标签，帮助客户在离开前完成购买。"],
+        ["Template card: Turn every resolved ticket into a pipeline opportunity","模板卡片：将已解决工单转为销售机会"],
+        ["Turn every resolved ticket into a pipeline opportunity","将已解决工单转为销售机会"],
+        ["When a ticket closes, your agent checks the customer's tier and opens an upsell case in Salesforce - every resolution becomes a next step for sales.","工单关闭后，客服会核对客户等级，并在 Salesforce 中创建追加销售案例，让每次解决问题都能带来新的销售机会。"],
+        ["Template card: Catch at-risk customers before they leave","模板卡片：提前识别可能流失的客户"],
+        ["Catch at-risk customers before they leave","提前识别可能流失的客户"],
+        ["When a chat gets a poor rating, the account is flagged as churn risk in Salesforce and your team lead gets notified - automatically.","聊天收到差评后，系统会在 Salesforce 中将账户标记为有流失风险，并自动通知团队负责人。"],
+        ["Template card: Your daily wins report, delivered to Slack","模板卡片：将每日成果报表发送到 Slack"],
+        ["Your daily wins report, delivered to Slack","将每日成果报表发送到 Slack"],
+        ["Every morning, yesterday's chat activity lands in your team channel - new leads captured, issues resolved, satisfaction rate. No manual pulling.","每天早上，团队频道会收到前一天的聊天报表，包括新增线索、已解决的问题和满意度，无需手动导出。"],
+        ["Customer experience","客户体验"],
+        ["Lead collection","线索收集"],
+        ["Notifications","通知"],
+        ["Welcome new chat visitors","欢迎发起聊天的新访客"],
+        ["Ticket when chat starts","开始聊天时创建工单"],
+        ["Notifications & alerts","通知与提醒"],
+        ["Ticket on competitor mention","提及竞争对手时创建工单"],
+        ["Ticket on bad rating","收到差评时创建工单"],
+        ["Tag order issue chats","为订单问题聊天添加标签"],
+        ["Support case follow-up","跟进客服案例"],
+        ["Ticket management","工单管理"],
+        ["Show Salesforce profile to the agent on chat start","聊天开始时向客服显示 Salesforce 资料"],
+        ["Show contact profile to agents","向客服显示联系人资料"],
+        ["Share chat insights as tickets","将聊天洞察作为工单分享"],
+        ["Chat management","聊天管理"],
+        ["Route chats by product interest","按感兴趣的产品分配聊天"],
+        ["Remind teammates to ask for reviews","提醒成员邀请客户评价"],
+        ["Recover from bad ratings","跟进差评"],
+        ["Qualify chat leads with AI and sync to Salesforce and Slack","用 AI 筛选聊天线索并同步到 Salesforce 和 Slack"],
+        ["Qualify chat leads with AI","用 AI 筛选聊天线索"],
+        ["Notify during transfers","转接时发送通知"],
+        ["Monitor new chat quality","监控新聊天质量"],
+        ["Message visitors who leave","给离开的访客发送消息"],
+        ["Mark as spam and close","标记为垃圾信息并关闭"],
+        ["Log support tickets in HubSpot","在 HubSpot 中记录客服工单"],
+        ["Log support tickets as Salesforce cases","将客服工单记录为 Salesforce 案例"],
+        ["Handle after-hours chats","处理非工作时间的聊天"],
+        ["Flag urgent chats","标记紧急聊天"],
+        ["Flag churn risk when a customer rates poorly","收到客户差评时标记流失风险"],
+        ["Escalate to manager","上报给负责人"],
+        ["Email chat transcript to visitor","通过邮件向访客发送聊天记录"],
+        ["Daily chats report to Slack","将每日聊天报表发送到 Slack"],
+        ["Customer feedback request","邀请客户反馈"],
+        ["Create Shopify customer from finished chat","根据已结束的聊天在 Shopify 中创建客户"],
+        ["Create a ticket with summary","创建包含摘要的工单"],
+        ["Create an upsell case after a ticket is resolved","工单解决后创建追加销售案例"],
+        ["Clarification for customer","请客户澄清"],
+        ["Capture new leads from first-time support chats","从首次客服聊天中获取新线索"],
+        ["Auto-tag by keywords","按关键词自动添加标签"],
+        ["Auto-reply to ratings","自动回复评价"],
+        ["Assist with chat transfers","协助转接聊天"],
+        ["Add new contacts to Salesforce from support tickets","根据客服工单在 Salesforce 中新增联系人"],
+        ["Add leads to marketing tools","将线索添加到营销工具"],
+        ["Add leads to Mailchimp","将线索添加到 Mailchimp"],
+        ["Add leads to HubSpot","将线索添加到 HubSpot"],
       ],
       rules: [],
       overrides: [],
@@ -437,8 +517,96 @@
         ["Recipients","收件人"],
         ["Schedule your first report","安排第一份报表"],
         ["Schedule recurring report","安排定期报表"],
+        ["Watch your business grow, live.","实时掌握业务增长情况。"],
+        ["Track sales, chats, and growth as they happen - from anywhere.","随时随地追踪销售、聊天和业务增长。"],
+        ["Download on the App Store","在 App Store 下载"],
+        ["Get it on Google Play","在 Google Play 下载"],
+        ["Explore it on AppGallery","在 AppGallery 查看"],
+        ["AI chats","AI 聊天"],
+        ["AI resolution rate","AI 解决率"],
+        ["N/A","暂无数据"],
+        ["Unique visitors","独立访客"],
+        ["Leads captured","已获取线索"],
+        ["Leads qualified","已确认的合格线索"],
+        ["Identify your leads by using customer fields.","通过客户字段识别线索。"],
+        ["Automated chats per hour","每小时自动处理的聊天数"],
+        ["on avg.","平均"],
+        ["Manual chats per hour","每小时人工处理的聊天数"],
+        ["Automated chat duration","自动聊天时长"],
+        ["Manual chat duration","人工聊天时长"],
+        ["Total chat duration","聊天总时长"],
+        ["Chat first response time","聊天首次响应时间"],
+        ["Automated CSAT","自动聊天满意度"],
+        ["Rated good","好评"],
+        ["Rated bad","差评"],
+        ["Manual CSAT","人工聊天满意度"],
+        ["Assisted CSAT","AI 辅助聊天满意度"],
+        ["Tickets solved","已解决工单"],
+        ["Closed tickets","已关闭工单"],
+        ["Ticket CSAT","工单满意度"],
+        ["Rated neutral","中评"],
+        ["Tickets first response time","工单首次响应时间"],
+        ["This report reflects data as of","此报表的数据截至"],
+        ["Configure your AI Agent","配置你的 AI 客服"],
+        ["AI Agent banner","AI 客服横幅"],
+        ["AI Agent chats","AI 客服聊天"],
+        ["Open AI Agent chats report","打开 AI 客服聊天报表"],
+        ["AI Agent CSAT score","AI 客服满意度"],
+        ["Open AI Agent CSAT score report","打开 AI 客服满意度报表"],
+        ["Transferred chats","已转接的聊天"],
+        ["Open transferred chats report","打开聊天转接报表"],
+        ["AI resolution","AI 解决情况"],
+        ["Breakdown","明细"],
+        ["Track all your business metrics in one place","集中追踪所有业务指标"],
+        ["Connect a channel to start collecting data about your business performance.","连接一个渠道，开始收集业务表现数据。"],
+        ["Connect channels","连接渠道"],
+        ["Top chat topics","热门聊天主题"],
+        ["Color by:","颜色区分："],
+        ["Chats count","聊天数量"],
+        ["Not enough data for this period","此时段的数据不足"],
+        ["Chat with customers to see data here.","与客户聊天后，即可在此查看数据。"],
+        ["Topic","主题"],
+        ["Avg. chat duration","平均聊天时长"],
+        ["Avg. CSAT","平均满意度"],
+        ["Campaign reach","活动触达"],
+        ["Campaign → Chat","活动 → 聊天"],
+        ["Chat → Becomes a lead","聊天 → 成为线索"],
+        ["Steps","阶梯视图"],
+        ["Smooth view","平滑视图"],
+        ["Recommended actions","建议操作"],
+        ["Track revenue from chats","追踪聊天带来的收入"],
+        ["See details","查看详情"],
+        ["Conversion rate","转化率"],
+        ["Qualified leads","合格线索"],
+        ["Identify your best leads by using customer fields.","通过客户字段识别优质线索。"],
+        ["Conversion timeline","转化趋势"],
+        ["Target","目标"],
+        ["Conversion by type","按类型查看转化"],
+        ["Tabs","标签页"],
+        ["Total conversion","总体转化"],
+        ["Human agent","人工客服"],
+        ["Top 5 campaigns","排名前 5 的活动"],
+        ["Campaign report","活动报表"],
+        ["Interaction","互动"],
+        ["The rate of successful interactions to all campaign displays.","成功互动占活动总展示次数的比例。"],
+        ["Displays","展示次数"],
+        ["Interactions","互动次数"],
+        ["Campaign to lead","活动转化为线索"],
+        ["Form type","表单类型"],
+        ["Pre-chat","聊天前"],
+        ["Chat with customers or change period to see data here.","与客户聊天或更改时间范围，即可在此查看数据。"],
+        ["Group by","分组依据"],
+        ["Sale timing","成交时间"],
+        ["Select date range","选择日期范围"],
+        ["vs N/A for previous period","上一时段：暂无数据"],
+        ["Handling time by status","按状态统计处理时长"],
+        ["Per teammate","按成员"],
+        ["Report content","报表内容"],
+        ["One time","仅发送一次"],
+        ["Recurring","定期发送"],
+        ["Date range","日期范围"],
       ],
-      rules: [["{n} days","{n} 天","[class*=\"_date-filter-container_\"]"]],
+      rules: [["{n} days","{n} 天","[class*=\"_date-filter-container_\"]"],["vs {n} for previous period","上一时段：{n}","[class*=\"_metric-basic-info__compare_\"]","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"],["vs {n} on avg. for previous period","上一时段平均：{n}","[class*=\"_metric-basic-info__compare_\"]","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"]],
       overrides: [],
       fragments: [{ path: /^\/app\/reports\/exports\/scheduled\/?$/, selector: "[class*=\"_empty-state__description_\"]", source: "Get reports emailed to selected teammates on a regular basis.", parts: ["Get reports emailed to selected teammates","on a regular basis."], target: ["通过邮件向指定成员","定期发送报表。"] }],
     },
@@ -656,10 +824,33 @@
         ["Let customers submit a ticket","允许客户提交工单"],
         ["Trusted addresses","可信地址"],
         ["Blocked addresses","阻止的地址"],
+        ["Notification banners","横幅通知"],
+        ["Sound notifications","声音通知"],
+        ["New messages","新消息"],
+        ["Repeat notification sound until new message is read","重复播放通知音，直到新消息被阅读"],
+        ["Incoming chats","新接入的聊天"],
+        ["Queued visitors","排队访客"],
+        ["New visitors","新访客"],
+        ["Returning visitors","回访访客"],
+        ["Launches on startup, native notifications, fewer tabs, no distractions.","支持开机启动和系统通知，少开网页标签，减少干扰。"],
+        ["Monitor real-time traffic, let visitors reach out, and engage them with campaigns.","监测实时流量，让访客联系你，并通过活动与他们互动。"],
+        ["AVAILABLE PLATFORMS:","可用平台："],
+        ["Install code manually","手动安装代码"],
+        ["Need help?","需要帮助？"],
+        ["read guide","阅读指南"],
+        ["Help center","帮助中心"],
+        ["Get QR code","获取二维码"],
+        ["Chat availability","聊天可用性"],
+        ["Grasp conversation context in seconds with AI summaries for chats and tickets.","通过 AI 摘要快速掌握聊天和工单的上下文。"],
+        ["Select language for all your chat and ticket summaries","选择所有聊天和工单摘要使用的语言"],
+        ["Auto detect language based on the agent language","根据客服使用的语言自动判断"],
+        ["Use one specific language for all summaries","所有摘要使用同一种指定语言"],
+        ["Amount","金额"],
+        ["or","或"],
       ],
       rules: [],
       overrides: [["General","通用"]],
-      fragments: [],
+      fragments: [{ path: /^\/app\/settings\/chats\/chat-transcripts\/?$/, selector: "[class*=\"_chat-transcripts-fields__label_\"]", source: "Send chat transcripts after each chat to up to 5 email addresses.", parts: ["Send chat transcripts after each chat to up to","5","email addresses."], target: ["每次聊天结束后，最多可将聊天记录发送至","5","个电子邮件地址。"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow teammates to share files", parts: ["Allow","teammates","to share files"], target: ["允许","成员","分享文件"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow customers to share files", parts: ["Allow","customers","to share files"], target: ["允许","客户","分享文件"] }],
     },
     // O onboarding：/app/onboarding 及其子路径。
     { id: "O", slug: "onboarding", path: /^\/app\/onboarding(?:\/|$)/,
@@ -708,15 +899,26 @@
     '[class*="_report-share-popover__header_"],[class*="_modal__heading_"]',
   ].join(',');
   const MAIN = '[class*="_app-frame-content__page-content-container__content-wrapper__content_"]';
+  const REPORT_COPY = [
+    '[class*="_metric-basic-info__title-box__title_"],[class*="_metric-basic-info__details_"]',
+    '[class*="_metric-basic-info__details-text_"],[class*="_metric-basic-info__compare_"],[class*="_breakdown-box__title_"],[class*="_metric-cta_"]',
+    '[class*="_summary-card_"],[class*="_chart-card-title_"],[class*="_recommended-actions__body_"]',
+    '[class*="_promo-banner__content_"],[class*="_mobile-promo-banner__store-link_"],[class*="_report-generated-at_"]',
+    '[class*="_filterButton__content__label_"],[class*="_column-label_"],[class*="_target-label_"]',
+  ].join(',');
   const SAFE_SETTINGS_COPY = /^\/app\/settings\/(?:notifications|desktop-app|channels|websites|email\/forwarding-addresses|whatsapp|messenger|instagram|telegram|twilio|sms-promo|chat-page|routing\/chat-routing|chats\/(?:chat-timeout|chat-transcripts|ai-summary)|chat-availability|tickets\/ticket-fields|customers\/customer-fields|security\/(?:trusted-domains|banned-customers|spam|file-sharing|login))(?:\/|$)/;
   const FORM_LABEL = 'label,legend,summary,[class*="_form-field__label_"],[class*="_field-label_"]';
   const CONTROL = 'button,[role=tab],[role=checkbox],[role=radio],' + FORM_LABEL;
   const BUTTON_INPUT = 'input[type=button],input[type=submit],input[type=reset]';
   const PICKER = '[role=listbox],[role=option],[role=combobox],[class*="_combobox__option"]';
   const SKILL_CARD = '[class*="_skill-card_"]';
-  const FRAGMENT_ROOT = '[class*="_empty-state__description_"]';
+  const FILE_SHARING_LABEL = '[class*="_file-sharing__checkbox_"] [class*="_checkbox__text_"]';
+  const FRAGMENT_ROOT = '[class*="_empty-state__description_"],[class*="_chat-transcripts-fields__label_"],' + FILE_SHARING_LABEL;
+  const TICKET_FILTER_TRIGGER = '[class*="_ticket-list-filters-action-menu__trigger_"]';
+  const TEMPLATE_PANEL = '[class*="_templates-picker__panel_"]';
   const POPUP_ITEMS = new Map([
-    ['Show filters', ['Teammate', 'Tag', 'Status', 'Assignment', 'Last message', 'Priority', 'Language', 'Source']],
+    ['Show filters', ['Teammate', 'Tag', 'Status', 'Creation date', 'Last activity', 'Assignment', 'Last message',
+      'Followers', 'Priority', 'Rating', 'Language', 'Source', 'Attachments']],
     ['Filter', ['Teammate', 'Priority', 'Tag', 'Team', 'Source', 'Language']],
     ['View and layout options', ['Column layout', 'Table layout']],
     ['Add new ticket or channel', ['Create ticket', 'Share chat page', 'Create automation', 'Invite teammates', 'Set up AI Agent', 'Connect channel']],
@@ -742,9 +944,9 @@
   const escape = s => s.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&');
   const edges = (raw, next) => raw.match(/^\s*/u)[0] + next + raw.match(/\s*$/u)[0];
   function compileRules(rules) {
-    return rules.map(([source, target, within]) => {
+    return rules.map(([source, target, within, quantity = '\\d+']) => {
       const [before, after] = source.split('{n}');
-      return { pattern: new RegExp('^' + escape(before) + '(\\d+)' + escape(after) + '$', 'u'), target, within };
+      return { pattern: new RegExp('^' + escape(before) + '(' + quantity + ')' + escape(after) + '$', 'u'), target, within };
     });
   }
   const common = new Map(COMMON_EXACT);
@@ -789,7 +991,8 @@
     const direct = originalAttr(menu, 'aria-label');
     if (direct) return norm(direct);
     const id = menu.getAttribute('aria-labelledby')?.trim().split(/\s+/, 1)[0];
-    const trigger = id && document.getElementById(id);
+    const labelled = id && document.getElementById(id);
+    const trigger = labelled?.matches(TICKET_FILTER_TRIGGER) ? labelled.querySelector(':scope > button[aria-label]') : labelled;
     if (!trigger?.matches('button,[role=button]')) return '';
     const label = originalAttr(trigger, 'aria-label');
     if (label) return norm(label);
@@ -802,6 +1005,8 @@
     return norm(parts.join(' '));
   }
 
+  const translationFor = key => scope?.overrides.get(key) ?? scope?.exact.get(key) ?? common.get(key);
+
   function menuAllows(menu, key) {
     let label = triggerLabel(menu);
     if (scope?.id === 'C' && /^More actions for\b/.test(label)) label = 'More actions for';
@@ -809,7 +1014,12 @@
       if (/^Tone of voice(?: |$)/.test(label)) label = 'Tone of voice';
       if (/^Answer length(?: |$)/.test(label)) label = 'Answer length';
     }
+    // 菜单可能在按钮汉化后才创建，并沿用按钮已翻译的名称。
+    if (!POPUP_ITEMS.has(label)) {
+      label = [...POPUP_ITEMS.keys()].find(name => translationFor(name) === label) || '';
+    }
     if (label === 'Filter' && scope?.id !== 'R') return false;
+    if (label === 'Show filters' && scope?.id !== 'I') return false;
     return POPUP_ITEMS.get(label)?.includes(key) === true;
   }
 
@@ -819,25 +1029,48 @@
     if (el.closest(NAV)) {
       if (scope?.id === 'A' && el.closest(SIDE_GROUP)) return false;
       const item = el.closest(SIDE_ITEM);
-      const href = item?.querySelector('a[href]')?.getAttribute('href') || '';
+      const href = (el.closest('a[href]') || item?.querySelector('a[href]'))?.getAttribute('href') || '';
       return !CUSTOM_VIEW.test(href.split(/[?#]/, 1)[0]);
     }
     if (el.matches('input')) {
       return attr === 'placeholder' || attr === 'aria-label' || attr === 'title' ||
         (attr === 'value' && el.matches(BUTTON_INPUT));
     }
+    if (scope?.id === 'R' && /\/exports\/send\/?$/.test(path) &&
+        el.closest('[class*="_send-report-export-container_"]') &&
+        (el.matches('[role=textbox][class*="_picker-trigger-empty-state__placeholder_"]') ||
+         el.closest('[class*="_single-picker_"] [class*="_picker-trigger-item__content_"]'))) return true;
     if (el.closest(PICKER)) return false;
-    if (el.matches('[class*="_templates-picker__panel_"]')) return scope?.id === 'P' && attr === 'aria-label';
+    if (el.matches('[class*="_search__text--full_"]') && el.closest('[class*="_search__container_"]')) return true;
+    if (attr === 'aria-label' && el.matches('[class*="_counter_"][role=button]') &&
+        el.closest('[class*="_counter-details-popover-trigger_"]')) return true;
+    if (scope?.id === 'P' && el.closest(TEMPLATE_PANEL + ',[class*="_skill-template-card_"]')) return true;
+    if (scope?.id === 'I' && el.closest('[class*="_ticket-info__details-metadata_"] [class*="_details-card-info__label_"]')) return true;
+    if (scope?.id === 'A' && /\/profile\/?$/.test(path) &&
+        el.closest('[class*="_simple-picker_"][role=button]')) return true;
     if (el.closest('[role=menu]')) return true; // 仅在已识别的静态菜单里匹配下方词条。
     if (el.closest(HEADER)) {
       return !CUSTOM_VIEW.test(path) && !el.closest('[class*="_ticket-feed_"],[class*="_chat-feed_"]');
     }
     if (el.closest(UI_PANEL) || el.closest(CONTROL) || el.closest(SKILL_CARD)) return true;
     if (!scope || !el.closest(MAIN)) return false;
+    if (scope.id === 'S' && (
+      (/\/notifications\/?$/.test(path) && el.closest('[class*="_switch-item__label_"]')) ||
+      (/\/desktop-app\/?$/.test(path) && el.closest('[class*="_promo__header-copy_"]')) ||
+      (/\/websites\/?$/.test(path) && el.closest('[class*="_websites-settings-empty-state__main_"]')) ||
+      (/\/chat-availability\/?$/.test(path) && el.closest('[class*="_messaging-mode-selector__label_"]')) ||
+      (/\/chats\/ai-summary\/?$/.test(path) && el.closest('[class*="_summary-language_"]'))
+    )) return true;
+    if (scope.id === 'R' && (el.closest(REPORT_COPY) ||
+        el.matches('[class*="_send-report-export-container_"] form > div > div > div > span') ||
+        (attr && el.matches('[class*="_overview-section_"],[class*="_sortable-item__draggable_"],[class*="_filterButton_"],' +
+          '[class*="_range-date-picker__custom-trigger_"],[role=tablist][class*="_tabs__list_"]')) ||
+        (attr === 'alt' && el.closest('[class*="_promo-banner__additional-content_"]')) ||
+        el.closest('a[href*="/app/reports/engagement/campaign-conversion"]'))) return true;
     if (/^\/app\/settings\/teammates\/me\/edit(?:\/|$)/.test(path) && el.matches('h5')) return true;
     const copy = scope.id === 'R' || scope.id === 'O' || SAFE_SETTINGS_COPY.test(path) ||
       (scope.id === 'A' && /\/(?:launch-guide|overview)\/?$/.test(path));
-    return copy && el.matches('p,h1,h2,h3,h4,h5,h6,[class*="_description_"],[class*="_help-text"]');
+    return copy && !!el.closest('p,h1,h2,h3,h4,h5,h6,[class*="_description_"],[class*="_help-text"]');
   }
 
   function lookup(raw, el) {
@@ -846,7 +1079,7 @@
     if (el.closest('[class*="_modal__heading_"]') && !['Create new chat tag', 'Add widget to your website', 'Invite teammates'].includes(key)) return null;
     const menu = el.closest('[role=menu]');
     if (menu && !menuAllows(menu, key)) return null;
-    const exact = scope?.overrides.get(key) ?? scope?.exact.get(key) ?? common.get(key);
+    const exact = translationFor(key);
     if (exact !== undefined) return edges(raw, exact);
     for (const rules of [scope?.rules || [], commonRules]) {
       for (const rule of rules) {
