@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Text 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.1.2
+// @version      0.1.3
 // @description  Text 登录后后台的简体中文界面；保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -13,7 +13,7 @@
 // @grant        none
 // ==/UserScript==
 /*
- * 最后核对：2026-11-07。以已安装的 0.1.1 实站界面为基线补漏；本版本为候选版，已做本地浏览器验证。
+ * 最后核对：2026-11-07。以已安装的 0.1.2 实站界面为基线，补齐订阅概览、套餐弹窗及其他固定控件。本版本为候选版。
  * 覆盖范围：www.text.com 登录后后台的收件箱、客户、AI 客服、Playbook、报表、设置及入门引导的已采集界面。
  * 已知未覆盖：HelpDesk 等跨域框架、独立组件定制器、客服窗口、图表文字及图片文字；
  * 真实会话、已连接渠道、非空报表、套餐差异、部分弹窗、错误、Toast 和窄屏布局未在本版本的实站重放中验证。
@@ -102,8 +102,10 @@
     ["Search","搜索"],
     ["Notifications","通知"],
     ["Log out","退出登录"],
+    ["AI resolutions","AI 解决次数"],
+    ["AI resolutions usage","AI 解决次数用量"],
   ];
-  const COMMON_RULES = [];
+  const COMMON_RULES = [["{n} Days left","剩余 {n} 天","a[class*=\"_subscription-counter_\"]"]];
   const SCOPES = [
     // I inbox：/app/inbox 及其子路径。
     { id: "I", slug: "inbox", path: /^\/app\/inbox(?:\/|$)/,
@@ -941,10 +943,69 @@
         ["Customer SDK","客户 SDK"],
         ["Manage profile","管理个人资料"],
         ["Add working hours","添加工作时间"],
+        ["Growth plan","成长版套餐"],
+        ["AI resolutions","AI 解决次数"],
+        ["Reply suggestions","回复建议"],
+        ["AI text edits","AI 文本编辑"],
+        ["Live visitors tracked","已追踪的实时访客"],
+        ["API calls","API 调用"],
+        ["Workspace skills","工作区技能"],
+        ["Proactive campaigns","主动触达活动"],
+        ["Chat topics insights","聊天主题分析"],
+        ["Chat supervision and takeover","监督和接管聊天"],
+        ["Chat and ticket summaries","聊天和工单摘要"],
+        ["Shared canned responses","共享快捷回复"],
+        ["Team performance reports","团队表现报表"],
+        ["Unlimited chat history","不限聊天记录"],
+        ["Usage","用量"],
+        ["Users","用户"],
+        ["Trial limit","试用限额"],
+        ["Choose your subscription plan","选择订阅套餐"],
+        ["Billed monthly","按月计费"],
+        ["Billed yearly","按年计费"],
+        ["Essential","基础版"],
+        ["For small teams earning their first revenue from chat.","适合希望通过聊天获得首批收入的小型团队。"],
+        ["per user/mo","每位用户/月"],
+        ["Downgrade plan","降级套餐"],
+        ["Essential plan includes:","基础版套餐包括："],
+        ["Custom skills","自定义技能"],
+        ["Inbox and ticketing system","收件箱和工单系统"],
+        ["Business channels","商业沟通渠道"],
+        ["Selling through Shopify","通过 Shopify 销售"],
+        ["Growth","成长版"],
+        ["Recommended","推荐"],
+        ["For scaling teams that want chat to drive revenue.","适合希望通过聊天带动收入增长的团队。"],
+        ["Stay on Growth","继续使用成长版"],
+        ["Enterprise","企业版"],
+        ["Custom AI, built and run for you. Backed by a team focused on your revenue goals.","为你定制、构建和运行 AI，由专注于你营收目标的团队提供支持。"],
+        ["Custom","定制"],
+        ["Contact Sales","联系销售"],
+        ["Adapts to how you work","适应你的工作方式"],
+        ["Custom AI Agents","定制 AI 客服"],
+        ["Tailored workflow automation","定制工作流自动化"],
+        ["Plugged into your data","接入你的数据"],
+        ["Flexible scaling and usage limits","灵活扩展与用量上限"],
+        ["An expert team in your corner","由专家团队提供支持"],
+        ["Personalized onboarding","个性化入门引导"],
+        ["Product training for your team","团队产品培训"],
+        ["Support from Product Expert","产品专家支持"],
+        ["Direct engineering support","工程团队直接支持"],
+        ["No procurement surprises","采购流程清晰可预期"],
+        ["SLAs and compliance review","服务级别协议和合规审查"],
+        ["White-label widget","可去除品牌标识的组件"],
+        ["SSO and audit logs","单点登录和审计日志"],
+        ["API pricing","API 定价"],
+        ["Documentation","文档"],
+        ["Allow external apps to access your Text data","允许外部应用访问你的 Text 数据"],
+        ["Create OAuth connections to let external applications securely access the information from your Text account within a defined scope.","创建 OAuth 连接，让外部应用在指定权限范围内安全访问你的 Text 账户信息。"],
+        ["Learn more","了解详情"],
+        ["Access Text outside the app","在应用外访问 Text"],
+        ["Create a personal access token to access and manage Text from your integrations.","创建个人访问令牌，以便从你的集成访问和管理 Text。"],
+        ["Create token","创建令牌"],
       ],
-      rules: [["Chat tags ({n})","聊天标签（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Ticket tags ({n})","工单标签（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Chat responses ({n})","聊天快捷回复（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Ticket responses ({n})","工单快捷回复（{n}）","[role=tab] [class*=\"_tab__label_\"]"]],
+      rules: [["Chat tags ({n})","聊天标签（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Ticket tags ({n})","工单标签（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Chat responses ({n})","聊天快捷回复（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Ticket responses ({n})","工单快捷回复（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Free trial ends in {n} days.","免费试用将在 {n} 天后结束。","[class*=\"_subscription-overview_\"] [class*=\"_alert__text-wrapper_\"]"]],
       overrides: [["General","通用"]],
-      fragments: [{ path: /^\/app\/settings\/chats\/chat-transcripts\/?$/, selector: "[class*=\"_chat-transcripts-fields__label_\"]", source: "Send chat transcripts after each chat to up to 5 email addresses.", parts: ["Send chat transcripts after each chat to up to","5","email addresses."], target: ["每次聊天结束后，最多可将聊天记录发送至","5","个电子邮件地址。"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow teammates to share files", parts: ["Allow","teammates","to share files"], target: ["允许","成员","分享文件"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow customers to share files", parts: ["Allow","customers","to share files"], target: ["允许","客户","分享文件"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no teammate replies to a new chat, transfer to another teammate after minutes", parts: ["If no teammate replies to a new chat,","transfer to another teammate","after","minutes"], target: ["如果没有成员回复新聊天，","转接给另一位成员","前等待","分钟"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no new messages are sent, mark chat as inactive after minutes", parts: ["If no new messages are sent,","mark chat as inactive","after","minutes"], target: ["如果没有新消息，","标记聊天为不活跃","前等待","分钟"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no new messages are sent, close chat after minutes", parts: ["If no new messages are sent,","close chat","after","minutes"], target: ["如果没有新消息，","关闭聊天","前等待","分钟"] }, { path: /^\/app\/settings\/customers\/customer-fields\/?$/, selector: "[class*=\"_customer-custom-fields-empty-state__content_\"] [class*=\"_empty-state__description_\"]", source: "Customer fields collect the details that matter about your customers. Qualification fields decide which leads show up in Qualified leads. Customer context fields keep useful details for your team.", parts: ["Customer fields collect the details that matter about your customers.","Qualification","fields decide which leads show up in Qualified leads.","Customer context","fields keep useful details for your team."], target: ["客户字段用于收集重要的客户信息。","线索资格","字段决定哪些线索会显示在“合格线索”中。","客户信息","字段为团队保留有用的客户资料。"] }],
+      fragments: [{ path: /^\/app\/settings\/billing\/subscription\/?$/, selector: "[class*=\"_external-choose-plan-tile__feature-header_\"]", source: "Everything in Essential, plus:", parts: ["Everything in","Essential,","plus:"], target: ["包含","基础版的全部功能，","另有："] }, { path: /^\/app\/settings\/chats\/chat-transcripts\/?$/, selector: "[class*=\"_chat-transcripts-fields__label_\"]", source: "Send chat transcripts after each chat to up to 5 email addresses.", parts: ["Send chat transcripts after each chat to up to","5","email addresses."], target: ["每次聊天结束后，最多可将聊天记录发送至","5","个电子邮件地址。"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow teammates to share files", parts: ["Allow","teammates","to share files"], target: ["允许","成员","分享文件"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow customers to share files", parts: ["Allow","customers","to share files"], target: ["允许","客户","分享文件"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no teammate replies to a new chat, transfer to another teammate after minutes", parts: ["If no teammate replies to a new chat,","transfer to another teammate","after","minutes"], target: ["如果没有成员回复新聊天，","转接给另一位成员","前等待","分钟"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no new messages are sent, mark chat as inactive after minutes", parts: ["If no new messages are sent,","mark chat as inactive","after","minutes"], target: ["如果没有新消息，","标记聊天为不活跃","前等待","分钟"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no new messages are sent, close chat after minutes", parts: ["If no new messages are sent,","close chat","after","minutes"], target: ["如果没有新消息，","关闭聊天","前等待","分钟"] }, { path: /^\/app\/settings\/customers\/customer-fields\/?$/, selector: "[class*=\"_customer-custom-fields-empty-state__content_\"] [class*=\"_empty-state__description_\"]", source: "Customer fields collect the details that matter about your customers. Qualification fields decide which leads show up in Qualified leads. Customer context fields keep useful details for your team.", parts: ["Customer fields collect the details that matter about your customers.","Qualification","fields decide which leads show up in Qualified leads.","Customer context","fields keep useful details for your team."], target: ["客户字段用于收集重要的客户信息。","线索资格","字段决定哪些线索会显示在“合格线索”中。","客户信息","字段为团队保留有用的客户资料。"] }],
     },
     // O onboarding：/app/onboarding 及其子路径。
     { id: "O", slug: "onboarding", path: /^\/app\/onboarding(?:\/|$)/,
@@ -1011,7 +1072,11 @@
   const SKILL_CARD = '[class*="_skill-card_"]';
   const FILE_SHARING_LABEL = '[class*="_file-sharing__checkbox_"] [class*="_checkbox__text_"]';
   const CHAT_TIMEOUT = '[class*="_timeout-settings_"]:has(> [class*="_timeout-settings__input_"])';
-  const FRAGMENT_ROOT = '[class*="_empty-state__description_"],[class*="_chat-transcripts-fields__label_"],' + FILE_SHARING_LABEL + ',' + CHAT_TIMEOUT;
+  const BILLING_PATH = /^\/app\/settings\/billing\/subscription\/?$/;
+  const BILLING_PLANS = '[class*="_subscription-overview_"],[class*="_external-choose-plan-modal_"]';
+  const BILLING_PLAN_NAMES = new Set(['Essential', 'Growth', 'Enterprise', 'Custom']);
+  const FRAGMENT_ROOT = '[class*="_empty-state__description_"],[class*="_chat-transcripts-fields__label_"],' +
+    '[class*="_external-choose-plan-tile__feature-header_"],' + FILE_SHARING_LABEL + ',' + CHAT_TIMEOUT;
   const TICKET_FILTER_TRIGGER = '[class*="_ticket-list-filters-action-menu__trigger_"]';
   const TICKET_FILTER_FIELDS = '[class*="_ticket-list-filters-tags__filters_"]';
   const REPORT_EXPORT = /^\/app\/reports\/exports\/send\/?$/;
@@ -1025,7 +1090,7 @@
     ['View and layout options', ['Column layout', 'Table layout']],
     ['Add new ticket or channel', ['Create ticket', 'Share chat page', 'Create automation', 'Invite teammates', 'Set up AI Agent', 'Connect channel']],
     ['Open profile menu', ['Show menu labels', 'Show navigation labels', 'Notifications', 'Download apps', 'Download mobile app',
-      'Download desktop app', 'Log out']],
+      'Download desktop app', 'Log out', 'AI resolutions', 'AI resolutions usage']],
     ['Invite', ['Invite teammate', 'Create AI Agent']],
     ['More actions for', ['Edit', 'Change name', 'Duplicate', 'Deactivate']],
     ['Create new skill', ['For your workspace', 'Runs on any event — tickets, chats, apps, schedule — or on demand.', 'For your AI Agent', "Runs inside your AI Agent's chats."]],
@@ -1167,6 +1232,8 @@
     if (attr === 'aria-label' && el.matches('button[role=combobox][class*="_picker-trigger_"]') &&
         ['Select option', 'Search options'].includes(norm(originalAttr(el, attr) || ''))) return true;
     if (el.closest(PICKER)) return !!el.closest(PICKER_LABEL);
+    if (BILLING_PATH.test(path) && el.closest(BILLING_PLANS)) return true;
+    if (attr === 'aria-label' && el.matches('a[class*="_subscription-counter_"]')) return true;
     if (attr === 'aria-label' && el.matches('[role=search][class*="_search-input_"]')) return true;
     if (el.matches('[class*="_search__text--full_"]') && el.closest('[class*="_search__container_"]')) return true;
     if (attr === 'aria-label' && el.matches('[class*="_counter_"][role=button]') &&
@@ -1202,6 +1269,7 @@
       (/\/customers\/customer-fields\/?$/.test(path) && el.closest('[class*="_category-preview_"] [class*="_details-card__label__content_"]')) ||
       (/\/integrations\/api-usage\/?$/.test(path) && attr === 'aria-label' &&
         el.matches('[class*="_api-usage-empty-state__cards_"] a[class*="_action-card_"]')) ||
+      (/\/integrations\/api-access(?:\/|$)/.test(path) && el.closest('[class*="_integration-tools-header_"]')) ||
       (/\/integrations\/api-access\/apis-sdks\/?$/.test(path) && el.closest('[class*="_apis-sdks_"]'))
     )) return true;
     if (scope.id === 'R' && (el.closest(REPORT_COPY) ||
@@ -1220,7 +1288,10 @@
   function lookup(raw, el) {
     const key = norm(raw);
     if (!/[A-Za-z]/.test(key)) return null;
-    if (el.closest('[class*="_modal__heading_"]') && !['Create new chat tag', 'Add widget to your website', 'Invite teammates'].includes(key)) return null;
+    if (scope?.id === 'S' && BILLING_PLAN_NAMES.has(key) && !(BILLING_PATH.test(path) && el.closest(BILLING_PLANS))) return null;
+    if (el.closest('[class*="_modal__heading_"]') &&
+        !['Create new chat tag', 'Add widget to your website', 'Invite teammates'].includes(key) &&
+        !(key === 'Choose your subscription plan' && BILLING_PATH.test(path) && el.closest('[class*="_external-choose-plan-modal_"]'))) return null;
     const menu = el.closest('[role=menu]');
     if (menu && !menuAllows(menu, key)) return null;
     if (el.closest(PICKER_LABEL) && !pickerAllows(el.closest('[role=listbox]'), key)) return null;
