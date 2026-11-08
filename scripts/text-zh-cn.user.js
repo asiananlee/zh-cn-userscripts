@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Text 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.1.3
+// @version      0.1.9
 // @description  Text 登录后后台的简体中文界面；保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -13,18 +13,593 @@
 // @grant        none
 // ==/UserScript==
 /*
- * 最后核对：2026-11-07。以已安装的 0.1.2 实站界面为基线，补齐订阅概览、套餐弹窗及其他固定控件。本版本为候选版。
+ * 最后核对：2026-11-08。本版放开了弹窗、卡片、提示等位置的翻译限制，并新增共享词条，补充设置、收件箱、报表、AI 客服、Playbook 和全局菜单的固定界面文案。
  * 覆盖范围：www.text.com 登录后后台的收件箱、客户、AI 客服、Playbook、报表、设置及入门引导的已采集界面。
  * 已知未覆盖：HelpDesk 等跨域框架、独立组件定制器、客服窗口、图表文字及图片文字；
- * 真实会话、已连接渠道、非空报表、套餐差异、部分弹窗、错误、Toast 和窄屏布局未在本版本的实站重放中验证。
- * 不翻译聊天、工单标题与正文、客户和资源名称、自定义内容、代码、凭据、网址、金额及实际数据。
+ * 部分弹出菜单的选项、报表侧栏、表头及提示仍有英文；
+ * 真实会话、已连接渠道、非空报表、套餐差异、部分弹窗、错误、Toast 和多数窄屏页面未覆盖。
+ * 不翻译聊天、工单标题与正文、客户和资源名称、自定义内容、默认快捷回复正文、代码、凭据、网址、金额及实际数据。
  * 调试：将 localStorage 中的 text.zhCN.debug 设为 1 后刷新开启，设为 0 后刷新关闭。
  * 调试仅在已知的界面区域记录脱敏后的未匹配项，最多 100 条。
  */
 (() => {
   'use strict';
 
+  const MODULE_FIXES = [
+    ["chat page","聊天页面","^/app/ai-agents/[^/]+/launch-guide/?$","text","span[class*=\"_launch-guide-step-accordion__label-copy_\"] > span[class*=\"_launch-guide-step-accordion__description_\"] > a[class*=\"_channels-launch-guide-step__chat-page-link_\"]",""],
+    ["Settings.","设置中。","^/app/ai-agents/[^/]+/launch-guide/?$","text","div[class*=\"_teams-moved-banner__body_\"] > span > span",""],
+    ["Teams and Teammates have moved to","团队和成员已移至","^/app/ai-agents/[^/]+/launch-guide/?$","text","div[class*=\"_teams-moved-banner__content_\"] > div[class*=\"_teams-moved-banner__body_\"] > span",""],
+    ["AI Agent chats","AI 客服聊天","^/app/ai-agents/[^/]+/overview/?$","text","div[class*=\"_metric-basic-info_\"] > div[class*=\"_metric-basic-info__title-box_\"] > span[class*=\"_metric-basic-info__title-box__title_\"]",""],
+    ["AI Agent CSAT score","AI 客服满意度评分","^/app/ai-agents/[^/]+/overview/?$","text","div[class*=\"_metric-basic-info_\"] > div[class*=\"_metric-basic-info__title-box_\"] > span[class*=\"_metric-basic-info__title-box__title_\"]",""],
+    ["AI resolution rate","AI 解决率","^/app/ai-agents/[^/]+/overview/?$","text","div[class*=\"_metric-basic-info_\"] > div[class*=\"_metric-basic-info__title-box_\"] > span[class*=\"_metric-basic-info__title-box__title_\"]",""],
+    ["Settings.","设置中。","^/app/ai-agents/[^/]+/overview/?$","text","div[class*=\"_teams-moved-banner__body_\"] > span > span",""],
+    ["Teams and Teammates have moved to","团队和成员已移至","^/app/ai-agents/[^/]+/overview/?$","text","div[class*=\"_teams-moved-banner__content_\"] > div[class*=\"_teams-moved-banner__body_\"] > span",""],
+    ["Transferred chats","已转接的聊天","^/app/ai-agents/[^/]+/overview/?$","text","div[class*=\"_metric-basic-info_\"] > div[class*=\"_metric-basic-info__title-box_\"] > span[class*=\"_metric-basic-info__title-box__title_\"]",""],
+    ["vs {n} for previous period","上一时段：{n}","^/app/ai-agents/[^/]+/overview/?$","text","div[class*=\"_metric-basic-info_\"] > div[class*=\"_metric-basic-info__compare_\"] > span","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"],
+    ["vs {n}% for previous period","上一时段：{n}%","^/app/ai-agents/[^/]+/overview/?$","text","div[class*=\"_metric-basic-info_\"] > div[class*=\"_metric-basic-info__compare_\"] > span","\\d+(?:[.,]\\d+)*"],
+    ["Settings.","设置中。","^/app/ai-agents/[^/]+/profile/?$","text","div[class*=\"_teams-moved-banner__body_\"] > span > span",""],
+    ["Teams and Teammates have moved to","团队和成员已移至","^/app/ai-agents/[^/]+/profile/?$","text","div[class*=\"_teams-moved-banner__content_\"] > div[class*=\"_teams-moved-banner__body_\"] > span",""],
+    ["Create skill","创建技能","^/app/ai-agents/[^/]+/skills/?$","text","div[class*=\"_new-custom-skill__body_\"] > div[class*=\"_new-custom-skill__content_\"] > span[class*=\"_new-custom-skill__title_\"]",""],
+    ["Settings.","设置中。","^/app/ai-agents/[^/]+/skills/?$","text","div[class*=\"_teams-moved-banner__body_\"] > span > span",""],
+    ["Teams and Teammates have moved to","团队和成员已移至","^/app/ai-agents/[^/]+/skills/?$","text","div[class*=\"_teams-moved-banner__content_\"] > div[class*=\"_teams-moved-banner__body_\"] > span",""],
+    ["Tell your AI Agent when to act and what to do.","告诉 AI 客服何时执行操作以及要做什么。","^/app/ai-agents/[^/]+/skills/?$","text","div[class*=\"_new-custom-skill__body_\"] > div[class*=\"_new-custom-skill__content_\"] > span[class*=\"_new-custom-skill__description_\"]",""],
+    ["Settings.","设置中。","^/app/ai-agents/[^/]+/knowledge/?$","text","div[class*=\"_teams-moved-banner__body_\"] > span > span",""],
+    ["Teams and Teammates have moved to","团队和成员已移至","^/app/ai-agents/[^/]+/knowledge/?$","text","div[class*=\"_teams-moved-banner__content_\"] > div[class*=\"_teams-moved-banner__body_\"] > span",""],
+    ["Settings.","设置中。","^/app/ai-agents/copilot/knowledge/?$","text","div[class*=\"_teams-moved-banner__body_\"] > span > span",""],
+    ["Teams and Teammates have moved to","团队和成员已移至","^/app/ai-agents/copilot/knowledge/?$","text","div[class*=\"_teams-moved-banner__content_\"] > div[class*=\"_teams-moved-banner__body_\"] > span",""],
+    ["Collect emails or phone numbers from visitors","收集访客的电子邮件地址或电话号码","^/app/customers/contacts/leads/?$","text","div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > div[class*=\"_empty-state__content-setup_\"] > h4[class*=\"_empty-state__title_\"]",""],
+    ["Collect emails or phone numbers from visitors","收集访客的电子邮件地址或电话号码","^/app/customers/contacts/leads/?$","attr:alt","div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > div[class*=\"_empty-state__image-container-setup_\"] > img[class*=\"_empty-state__image_\"][class*=\"_empty-state__image--setup_\"]",""],
+    ["Keep your most important customers in one place","集中管理最重要的客户","^/app/customers/contacts/vip/?$","text","div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > div[class*=\"_empty-state__content-setup_\"] > h4[class*=\"_empty-state__title_\"]",""],
+    ["Keep your most important customers in one place","集中管理最重要的客户","^/app/customers/contacts/vip/?$","attr:alt","div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > div[class*=\"_empty-state__image-container-setup_\"] > img[class*=\"_empty-state__image_\"][class*=\"_empty-state__image--setup_\"]",""],
+    ["Solved","已解决","^/app/inbox/ai-agents/solved/?$","text","div[class*=\"_content-header_\"][class*=\"_archive-list-header_\"] > div[class*=\"_archive-list-header__title_\"] > h5",""],
+    ["Invite a developer","邀请开发人员","^/app/inbox/ai-agents/sold/?$","text","button[class*=\"_btn_\"][class*=\"_btn--link_\"] > div[class*=\"_btn__content_\"] > span",""],
+    ["Open Google Tag Manager setup documentation","打开 Google Tag Manager 设置文档","^/app/inbox/ai-agents/sold/?$","attr:aria-label","div[class*=\"_main-wrapper_\"] > div[class*=\"_action-card_\"][class*=\"_action-card--has-overlay_\"] > button[class*=\"_action-card__action_\"]",""],
+    ["See which chats lead to conversions","查看哪些聊天带来了转化","^/app/inbox/ai-agents/sold/?$","text","div[class*=\"_sold-install-tracking-empty-state__content-first-column_\"] > div[class*=\"_sold-install-tracking-empty-state__content-header_\"] > h4",""],
+    ["Sold","已成交","^/app/inbox/ai-agents/sold/?$","text","div[class*=\"_content-header_\"][class*=\"_archive-list-header_\"] > div[class*=\"_archive-list-header__title_\"] > h5",""],
+    ["Connect with your customers","与客户建立联系","^/app/onboarding/list/?$","text","div[class*=\"_checklist-step__content_\"] > div[class*=\"_checklist-step__header_\"] > span",""],
+    ["Breakdown","明细","^/app/reports/chat-topics/?$","text","[class*=\"_chat-topics-content_\"] [class*=\"_heading-container_\"] > span",""],
+    ["{n} leads from {n} chats","{n} 条线索，来自 {n} 次聊天","^/app/reports/customers/leads-conversion/?$","text","div[class*=\"_subtext_\"] > div > div","(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?"],
+    ["AI Agent: N/A conversion rate, {n} leads","AI 客服：转化率暂无数据，{n} 条线索","^/app/reports/customers/leads-conversion/?$","attr:aria-label","div[class*=\"_bars_\"] > div[class*=\"_bar-trigger_\"] > div[class*=\"_bar_\"][class*=\"_bar--ai_\"]","(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?"],
+    ["Chat forms: N/A conversion rate, {n} leads","聊天表单：转化率暂无数据，{n} 条线索","^/app/reports/customers/leads-conversion/?$","attr:aria-label","div[class*=\"_bars_\"] > div[class*=\"_bar-trigger_\"] > div[class*=\"_bar_\"][class*=\"_bar--chat-forms_\"]","(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?"],
+    ["Human agent: N/A conversion rate, {n} leads","人工客服：转化率暂无数据，{n} 条线索","^/app/reports/customers/leads-conversion/?$","attr:aria-label","div[class*=\"_bars_\"] > div[class*=\"_bar-trigger_\"] > div[class*=\"_bar_\"][class*=\"_bar--human_\"]","(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?"],
+    ["N/A","暂无数据","^/app/reports/customers/leads-conversion/?$","text","div[class*=\"_content_\"] > div[class*=\"_column_\"] > div[class*=\"_display-md_\"]",""],
+    ["The option to compare time filters is not available in the campaign breakdown.","活动明细不支持比较时间筛选条件。","^/app/reports/engagement/campaign-conversion/?$","text","div[class*=\"_card__content_\"] > div[class*=\"_chart-card__section_\"] > div[class*=\"_compare-note_\"]",""],
+    ["Anomaly","异常","^/app/reports/chat-availability/?$","text","div > div[class*=\"_item_\"] > span",""],
+    ["Best","最佳","^/app/reports/chat-availability/?$","text","div[class*=\"_summary_\"] > div[class*=\"_item_\"][class*=\"_item-interactive_\"] > span",""],
+    ["Target","目标","^/app/reports/chat-availability/?$","text","div > div[class*=\"_item_\"] > span",""],
+    ["Trend","趋势","^/app/reports/chat-availability/?$","text","div > div[class*=\"_item_\"] > span",""],
+    ["Worst","最差","^/app/reports/chat-availability/?$","text","div[class*=\"_summary_\"] > div[class*=\"_item_\"][class*=\"_item-interactive_\"] > span",""],
+    ["Average waiting time","平均等待时间","^/app/reports/customers/queued-customers/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Comparing filters such as time or groups is unavailable in heatmap visualization.","热力图不支持比较时间或团队等筛选条件。","^/app/reports/customers/queued-customers/?$","text","div > div[class*=\"_queued-customers-heatmap-warnings_\"] > span",""],
+    ["Left the queue","已离开队列","^/app/reports/customers/queued-customers/?$","text","div[class*=\"_abandoned-queue-table__heading_\"] > div[class*=\"_abandoned-queue-table__heading-title_\"] > span",""],
+    ["Make sure to keep it up with the help of your AI Agent.","让 AI 客服协助你保持这一表现。","^/app/reports/customers/queued-customers/?$","text","div[class*=\"_abandoned-queue-table_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > span[class*=\"_empty-state__description_\"]",""],
+    ["Make sure to keep it up with the help of your AI Agent.","让 AI 客服协助你保持这一表现。","^/app/reports/customers/queued-customers/?$","text","div[class*=\"_chart-card__section_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > span[class*=\"_empty-state__description_\"]",""],
+    ["No customers left the queue in this period","此时段没有客户离开队列","^/app/reports/customers/queued-customers/?$","text","div[class*=\"_abandoned-queue-table_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > h4[class*=\"_empty-state__title_\"]",""],
+    ["No customers waiting in this period","此时段没有客户等待","^/app/reports/customers/queued-customers/?$","text","div[class*=\"_chart-card__section_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > h4[class*=\"_empty-state__title_\"]",""],
+    ["Queue conversion","排队转化","^/app/reports/customers/queued-customers/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Queued customers heatmap","排队客户热力图","^/app/reports/customers/queued-customers/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Series","系列","^/app/reports/customers/queued-customers/?$","text","[class*=\"_header__content__text_\"] > div > div",""],
+    ["Total","合计","^/app/reports/customers/queued-customers/?$","text","[class*=\"_header__content__text_\"] > div > div",""],
+    ["vs","对比","^/app/reports/customers/queued-customers/?$","text","[class*=\"_header__content__text_\"] > div > div",""],
+    ["Comparing filters such as time, groups or agents is unavailable in heatmap visualization.","热力图不支持比较时间、团队或成员等筛选条件。","^/app/reports/missed-chats/?$","text","div > div[class*=\"_total-chats-heatmap-warnings_\"] > span",""],
+    ["Heatmap","热力图","^/app/reports/missed-chats/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Completion rate","完成率","^/app/reports/chat-forms/?$","text","div[class*=\"_column_\"][class*=\"_columnSm12_\"] > div[class*=\"_summary-card_\"] > span",""],
+    ["Create chat forms to gain data from your customers, or change the date range to see past data.","创建聊天表单以收集客户数据，或更改日期范围以查看历史数据。","^/app/reports/chat-forms/?$","text","div[class*=\"_empty-state_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > span[class*=\"_empty-state__description_\"]",""],
+    ["Create pre-chat form","创建聊天前表单","^/app/reports/chat-forms/?$","text","div[class*=\"_empty-state__actions_\"] > button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Forms","表单","^/app/reports/chat-forms/?$","text","div[class*=\"_column_\"][class*=\"_columnSm12_\"] > div[class*=\"_summary-card_\"] > span",""],
+    ["Responses","回复","^/app/reports/chat-forms/?$","text","div[class*=\"_column_\"][class*=\"_columnSm12_\"] > div[class*=\"_summary-card_\"] > span",""],
+    ["Open Total chats report","打开聊天总数报表","^/app/reports/total-cases/?$","attr:aria-label","div > div[class*=\"_metric-cards__value_\"] > a[class*=\"_link_\"][class*=\"_metric-cards__value-link_\"]",""],
+    ["Open Total tickets report","打开工单总数报表","^/app/reports/total-cases/?$","attr:aria-label","div > div[class*=\"_metric-cards__value_\"] > a[class*=\"_link_\"][class*=\"_metric-cards__value-link_\"]",""],
+    ["Select metric","选择指标","^/app/reports/total-cases/?$","attr:aria-label","div[class*=\"_card__content_\"] > div[class*=\"_chart-card__section_\"] > div[class*=\"_metric-cards_\"]",""],
+    ["Total cases heatmap in last {n} days","最近 {n} 天案例总数热力图","^/app/reports/total-cases/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]","\\d+"],
+    ["Total tickets","工单总数","^/app/reports/total-cases/?$","attr:aria-label","div[class*=\"_metric-cards_\"] > div[class*=\"_metric-cards__card_\"] > div[class*=\"_card_\"][class*=\"_radio-card_\"]",""],
+    ["Total tickets","工单总数","^/app/reports/total-cases/?$","text","div[class*=\"_radio-card__right_\"] > div > span",""],
+    ["Comparing filters such as time, groups or agents is unavailable in heatmap visualization.","热力图不支持比较时间、团队或成员等筛选条件。","^/app/reports/total-chats/?$","text","div > div[class*=\"_total-chats-heatmap-warnings_\"] > span",""],
+    ["Heatmap","热力图","^/app/reports/total-chats/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["New tickets heatmap in last {n} days","最近 {n} 天新建工单热力图","^/app/reports/tickets/new-tickets/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]","\\d+"],
+    ["Ticket sources","工单来源","^/app/reports/tickets/new-tickets/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Solved and closed","已解决和已关闭","^/app/reports/tickets/solved-and-closed/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Action","操作","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Campaign","活动","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Chat with customers and connect sales platforms to see data here.","与客户聊天并连接销售平台后，即可在此查看数据。","^/app/reports/ecommerce/all-sales/?$","text","div > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > span[class*=\"_empty-state__description_\"]",""],
+    ["Chat with customers and connect sales platforms to see data here.","与客户聊天并连接销售平台后，即可在此查看数据。","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_top-orders-table_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > span[class*=\"_empty-state__description_\"]",""],
+    ["Connect sales platforms","连接销售平台","^/app/reports/ecommerce/all-sales/?$","text","a > button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Interaction type","互动类型","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["No data for this period","此时段无数据","^/app/reports/ecommerce/all-sales/?$","text","div > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > h4[class*=\"_empty-state__title_\"]",""],
+    ["No data for this period","此时段无数据","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_top-campaigns-table_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > h4[class*=\"_empty-state__title_\"]",""],
+    ["No data for this period","此时段无数据","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_top-orders-table_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > h4[class*=\"_empty-state__title_\"]",""],
+    ["Order count","订单数","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Order data syncs once a day and includes sales made during or within {n} days after a chat.","订单数据每天同步一次，包含聊天期间或聊天结束后 {n} 天内产生的销售。","^/app/reports/ecommerce/all-sales/?$","text","div > div[class*=\"_subtitle-trigger_\"] > div[class*=\"_subtitle_\"][class*=\"_sales-report-subtitle_\"]","\\d+"],
+    ["Order ID","订单编号","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Order value","订单金额","^/app/reports/ecommerce/all-sales/?$","text","span[class*=\"_header__content_\"] > div > span",""],
+    ["Summary","摘要","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_chart-card-header_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Time to order","下单用时","^/app/reports/ecommerce/all-sales/?$","text","span[class*=\"_header__content_\"] > div > span",""],
+    ["Top campaigns","排名靠前的活动","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_top-campaigns-header_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Top orders","排名靠前的订单","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_top-orders-header_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Total sales","销售总额","^/app/reports/ecommerce/all-sales/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Action","操作","^/app/reports/ecommerce/ai-agent-sales/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Chat with customers and connect sales platforms to see data here.","与客户聊天并连接销售平台后，即可在此查看数据。","^/app/reports/ecommerce/ai-agent-sales/?$","text","div > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > span[class*=\"_empty-state__description_\"]",""],
+    ["Chat with customers and connect sales platforms to see data here.","与客户聊天并连接销售平台后，即可在此查看数据。","^/app/reports/ecommerce/ai-agent-sales/?$","text","div[class*=\"_top-orders-table_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > span[class*=\"_empty-state__description_\"]",""],
+    ["Connect sales platforms","连接销售平台","^/app/reports/ecommerce/ai-agent-sales/?$","text","a > button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["No data for this period","此时段无数据","^/app/reports/ecommerce/ai-agent-sales/?$","text","div > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > h4[class*=\"_empty-state__title_\"]",""],
+    ["No data for this period","此时段无数据","^/app/reports/ecommerce/ai-agent-sales/?$","text","div[class*=\"_top-orders-table_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > h4[class*=\"_empty-state__title_\"]",""],
+    ["Order data syncs once a day and includes sales made during or within {n} days after a chat.","订单数据每天同步一次，包含聊天期间或聊天结束后 {n} 天内产生的销售。","^/app/reports/ecommerce/ai-agent-sales/?$","text","div > div[class*=\"_subtitle-trigger_\"] > div[class*=\"_subtitle_\"][class*=\"_sales-report-subtitle_\"]","\\d+"],
+    ["Order ID","订单编号","^/app/reports/ecommerce/ai-agent-sales/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Order value","订单金额","^/app/reports/ecommerce/ai-agent-sales/?$","text","span[class*=\"_header__content_\"] > div > span",""],
+    ["Summary","摘要","^/app/reports/ecommerce/ai-agent-sales/?$","text","div[class*=\"_chart-card-header_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Time to order","下单用时","^/app/reports/ecommerce/ai-agent-sales/?$","text","span[class*=\"_header__content_\"] > div > span",""],
+    ["Top orders","排名靠前的订单","^/app/reports/ecommerce/ai-agent-sales/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_top-orders-header_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["AI Agent","AI 客服","^/app/reports/ecommerce/sales-conversion/?$","text","div[class*=\"_header_\"] > div[class*=\"_header__label_\"] > span",""],
+    ["AI sales","AI 销售","^/app/reports/ecommerce/sales-conversion/?$","text","div[class*=\"_header_\"] > a[class*=\"_btn_\"][class*=\"_btn--plain_\"] > div[class*=\"_btn__content_\"]",""],
+    ["All sales","全部销售","^/app/reports/ecommerce/sales-conversion/?$","text","div[class*=\"_header_\"] > a[class*=\"_btn_\"][class*=\"_btn--plain_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Connect a sales platform to start tracking conversion from customer conversations.","连接销售平台后，即可追踪客户对话带来的转化。","^/app/reports/ecommerce/sales-conversion/?$","text","div[class*=\"_chart-card__section_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > span[class*=\"_empty-state__description_\"]",""],
+    ["Connect sales platform","连接销售平台","^/app/reports/ecommerce/sales-conversion/?$","text","div[class*=\"_empty-state__actions_\"] > button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Human agent","人工客服","^/app/reports/ecommerce/sales-conversion/?$","text","div[class*=\"_header_\"] > div[class*=\"_header__label_\"] > span",""],
+    ["N/A","暂无数据","^/app/reports/ecommerce/sales-conversion/?$","text","div[class*=\"_card_\"] > div[class*=\"_value-row_\"] > div[class*=\"_display-md_\"]",""],
+    ["No chat","无聊天","^/app/reports/ecommerce/sales-conversion/?$","text","div[class*=\"_header_\"] > div[class*=\"_header__label_\"] > span",""],
+    ["sales from","笔销售，来自","^/app/reports/ecommerce/sales-conversion/?$","text","div[class*=\"_stack_\"] > div[class*=\"_card_\"] > div[class*=\"_subtext_\"]",""],
+    ["visits","次访问","^/app/reports/ecommerce/sales-conversion/?$","text","div[class*=\"_stack_\"] > div[class*=\"_card_\"] > div[class*=\"_subtext_\"]",""],
+    ["Active","活跃","^/app/reports/teammate-performance/?$","text","button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"] > span",""],
+    ["Chat satisfaction (CSAT)","聊天满意度（CSAT）","^/app/reports/teammate-performance/?$","text","div[class*=\"_column_\"][class*=\"_columnSm6_\"] > div[class*=\"_summary-metric-tail_\"] > span",""],
+    ["Chats per hour","每小时聊天数","^/app/reports/teammate-performance/?$","text","div[class*=\"_column_\"][class*=\"_columnSm6_\"] > div[class*=\"_summary-metric-tail_\"] > span",""],
+    ["First response time (FRT)","首次响应时间（FRT）","^/app/reports/teammate-performance/?$","text","div[class*=\"_column_\"][class*=\"_columnSm6_\"] > div[class*=\"_summary-metric-tail_\"] > span",""],
+    ["N/A","暂无数据","^/app/reports/teammate-performance/?$","text","div[class*=\"_summary-metric-tail__details_\"] > div[class*=\"_display-md_\"] > a[class*=\"_summary-metric-tail__link_\"]",""],
+    ["Status:","状态：","^/app/reports/teammate-performance/?$","text","div > button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Teammate performance","成员表现","^/app/reports/teammate-performance/?$","text","div[class*=\"_table-section__heading_\"] > div[class*=\"_table-section__heading-title_\"] > span",""],
+    ["Total chats","聊天总数","^/app/reports/teammate-performance/?$","text","div[class*=\"_column_\"][class*=\"_columnSm6_\"] > div[class*=\"_summary-metric-tail_\"] > span",""],
+    ["Active","活跃","^/app/reports/teammate-activity/?$","text","[class*=\"_teammate-activity-report__filters_\"] button [class*=\"_btn__content_\"] span > div",""],
+    ["Status:","状态：","^/app/reports/teammate-activity/?$","text","button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"] > div",""],
+    ["Teammate activity","成员活动","^/app/reports/teammate-activity/?$","text","div[class*=\"_teammate-activity-card__header-title_\"] > div[class*=\"_teammate-activity-report__header-title_\"] > span",""],
+    ["Good rate chance","好评概率","^/app/reports/chat-satisfaction/?$","text","span[class*=\"_header__content_\"] > div > span",""],
+    ["Top rated teammates","评分最高的成员","^/app/reports/chat-satisfaction/?$","text","div[class*=\"_table-card__header_\"] > div > span",""],
+    ["Average response time","平均响应时间","^/app/reports/chat-response-times/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["First response time","首次响应时间","^/app/reports/chat-response-times/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Tickets satisfaction","工单满意度","^/app/reports/tickets/satisfaction/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Per team","按团队","^/app/reports/tickets/transfers/?$","text","div[class*=\"_chart-card-header_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Team transfer matrix","团队转交矩阵","^/app/reports/tickets/transfers/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_team-transfer-matrix-card__header_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Tickets transferred","已转交的工单","^/app/reports/tickets/transfers/?$","text","div[class*=\"_summary-card_\"] > div[class*=\"_summary-card__title_\"] > span",""],
+    ["Top routes","主要转交流向","^/app/reports/tickets/transfers/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_top-routes__header_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Total transfers","转交总数","^/app/reports/tickets/transfers/?$","text","div[class*=\"_summary-card_\"] > div[class*=\"_summary-card__title_\"] > span",""],
+    ["Transfer rate","转交率","^/app/reports/tickets/transfers/?$","text","div[class*=\"_summary-card_\"] > div[class*=\"_summary-card__title_\"] > span",""],
+    ["Transfers per ticket","每个工单的转交次数","^/app/reports/tickets/transfers/?$","text","div[class*=\"_summary-card_\"] > div[class*=\"_summary-card__title_\"] > span",""],
+    ["Avg. first response time","平均首次响应时间","^/app/reports/tickets/first-response-time/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Resolution time","解决用时","^/app/reports/tickets/resolution-time/?$","text","div[class*=\"_chart-card-header_\"][class*=\"_with-margin_\"] > div > span[class*=\"_chart-card-title_\"]",""],
+    ["Recurring reports ({n})","定期报表（{n}）","^/app/reports/exports/scheduled/?$","text","div[class*=\"_content-header_\"] > div > h5[class*=\"_content-header__title_\"]","\\d+"],
+    ["Test notification","测试通知","^/app/settings/notifications/?$","text","div[class*=\"_switch-item__actions_\"] > button[class*=\"_btn_\"][class*=\"_btn--text_\"] > div[class*=\"_btn__content_\"]",""],
+    ["About","基本信息","^/app/settings/company-details/?$","text","form[class*=\"_form_\"][class*=\"_container_\"] > section[class*=\"_container_\"] > h5",""],
+    ["Address","地址","^/app/settings/company-details/?$","text","form[class*=\"_form_\"][class*=\"_container_\"] > section[class*=\"_container_\"] > h5",""],
+    ["Audience","受众","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["City","城市","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["Company size","公司规模","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["Country","国家或地区","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["Enter city","输入城市","^/app/settings/company-details/?$","attr:placeholder","div > div[class*=\"_input_\"][class*=\"_input--md_\"] > input",""],
+    ["Enter organization name","输入组织名称","^/app/settings/company-details/?$","attr:placeholder","div > div[class*=\"_input_\"][class*=\"_input--md_\"] > input",""],
+    ["Enter state","输入州、省或地区","^/app/settings/company-details/?$","attr:placeholder","div > div[class*=\"_input_\"][class*=\"_input--md_\"] > input",""],
+    ["Enter street address","输入街道地址","^/app/settings/company-details/?$","attr:placeholder","div > div[class*=\"_input_\"][class*=\"_input--md_\"] > input",""],
+    ["Enter ZIP code","输入邮政编码","^/app/settings/company-details/?$","attr:placeholder","div > div[class*=\"_input_\"][class*=\"_input--md_\"] > input",""],
+    ["Industry","行业","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["Mobile phone number","手机号码","^/app/settings/company-details/?$","text","div[class*=\"_phone-input-container_\"][class*=\"_phone-input-container--owner_\"] > label[class*=\"_field-label_\"] > span",""],
+    ["Organization name","组织名称","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["Owner","所有者","^/app/settings/company-details/?$","text","div[class*=\"_tag_\"][class*=\"_tag--sm_\"] > div[class*=\"_tag__content-wrapper_\"] > div[class*=\"_tag__content_\"]",""],
+    ["Remove tag","移除标签","^/app/settings/company-details/?$","attr:aria-label","div[class*=\"_picker-trigger__content-container-inner_\"][class*=\"_picker-trigger__content-container-inner--medium_\"] > div[class*=\"_tag_\"][class*=\"_multi-picker-trigger-body__tag_\"] > button[class*=\"_btn_\"][class*=\"_btn--plain_\"]",""],
+    ["Remove","移除","^/app/settings/company-details/?$","attr:title","div[class*=\"_picker-trigger__content-container-inner_\"][class*=\"_picker-trigger__content-container-inner--medium_\"] > div[class*=\"_tag_\"][class*=\"_multi-picker-trigger-body__tag_\"] > button[class*=\"_btn_\"][class*=\"_btn--plain_\"]",""],
+    ["Search industry","搜索行业","^/app/settings/company-details/?$","text","div[class*=\"_picker-trigger__content-container_\"] > div[class*=\"_picker-trigger__content-container-inner_\"][class*=\"_picker-trigger__content-container-inner--medium_\"] > div[class*=\"_picker-trigger-empty-state__placeholder_\"][class*=\"_picker-trigger-empty-state__placeholder--medium_\"]",""],
+    ["Search industry","搜索行业","^/app/settings/company-details/?$","attr:aria-label","div[class*=\"_picker-trigger__content-container_\"] > div[class*=\"_picker-trigger__content-container-inner_\"][class*=\"_picker-trigger__content-container-inner--medium_\"] > div[class*=\"_picker-trigger-empty-state__placeholder_\"][class*=\"_picker-trigger-empty-state__placeholder--medium_\"]",""],
+    ["Social media","社交媒体","^/app/settings/company-details/?$","text","form[class*=\"_form_\"][class*=\"_container_\"] > section[class*=\"_container_\"] > h5",""],
+    ["State / Province / Region","州、省或地区","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["Street","街道地址","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["Website address","网站地址","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["X (previously Twitter)","X（原 Twitter）","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["ZIP code","邮政编码","^/app/settings/company-details/?$","text","div[class*=\"_form-field-label__wrapper_\"] > label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["Change password","更改密码","^/app/settings/teammates/me/edit/?$","text","div[class*=\"_basic-details__password_\"] > button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Chat settings","聊天设置","^/app/settings/teammates/me/edit/?$","text","div[class*=\"_tabs__list_\"] > button[class*=\"_tab_\"][class*=\"_tab--lg_\"] > span[class*=\"_tab__label_\"]",""],
+    ["General","通用","^/app/settings/teammates/me/edit/?$","text","div[class*=\"_tabs__list_\"] > button[class*=\"_tab_\"][class*=\"_tab--lg_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Ticket settings","工单设置","^/app/settings/teammates/me/edit/?$","text","div[class*=\"_tabs__list_\"] > button[class*=\"_tab_\"][class*=\"_tab--lg_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Accept chats","接待聊天","^/app/settings/teammates/me/edit/chat-settings/?$","text","div[class*=\"_radio-button_\"][class*=\"_radio-button--selected_\"] > label[class*=\"_radio-button__label_\"] > div[class*=\"_radio-button__text_\"]",""],
+    ["Concurrent chats","同时接待的聊天数","^/app/settings/teammates/me/edit/chat-settings/?$","text","form[class*=\"_details-form__form_\"] > div[class*=\"_section_\"] > h5",""],
+    ["Don't accept chats","不接待聊天","^/app/settings/teammates/me/edit/chat-settings/?$","text","div[class*=\"_radio-button_\"] > label[class*=\"_radio-button__label_\"] > div[class*=\"_radio-button__text_\"]",""],
+    ["Member of {n} chatting team","加入了 {n} 个聊天团队","^/app/settings/teammates/me/edit/chat-settings/?$","text","form[class*=\"_details-form__form_\"] > div[class*=\"_section_\"] > h5","\\d+"],
+    ["Auto-assign tickets to this teammate","自动向此成员分配工单","^/app/settings/teammates/me/edit/ticket-settings/?$","text","label[class*=\"_checkbox__label_\"] > div[class*=\"_checkbox__text_\"] > span",""],
+    ["Auto-assignment","自动分配","^/app/settings/teammates/me/edit/ticket-settings/?$","text","form[class*=\"_details-form__form_\"] > div[class*=\"_section_\"] > h5",""],
+    ["Receive ticket email notifications","接收工单邮件通知","^/app/settings/teammates/me/edit/ticket-settings/?$","text","label[class*=\"_checkbox__label_\"] > div[class*=\"_checkbox__text_\"] > span",""],
+    ["Chatting","聊天","^/app/settings/teams/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Manage team","管理团队","^/app/settings/teams/?$","text","div[class*=\"_general-info__actions_\"] > button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Ticketing","工单","^/app/settings/teams/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Automatic","自动","^/app/settings/teams/chatting/[^/]+/?$","text","label[class*=\"_radio-button__label_\"] > div[class*=\"_radio-button__text_\"] > span",""],
+    ["Chatting","聊天","^/app/settings/teams/chatting/[^/]+/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Manage team","管理团队","^/app/settings/teams/chatting/[^/]+/?$","text","div[class*=\"_general-info__actions_\"] > button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Manual","手动","^/app/settings/teams/chatting/[^/]+/?$","text","label[class*=\"_radio-button__label_\"] > div[class*=\"_radio-button__text_\"] > span",""],
+    ["Ticketing","工单","^/app/settings/teams/chatting/[^/]+/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Website","网站","^/app/settings/websites/?$","attr:placeholder","div > div[class*=\"_input_\"][class*=\"_input--md_\"] > input",""],
+    ["Add your domain to reply from a professional email address and build trust with customers.","添加域名，使用专业的邮箱地址回复，建立客户信任。","^/app/settings/email/domains/?$","text","div[class*=\"_email-settings__empty-state-wrapper_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > span[class*=\"_empty-state__description_\"]",""],
+    ["Connect domain","连接域名","^/app/settings/email/domains/?$","text","div[class*=\"_empty-state__actions_\"] > button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Connect your domain to use your email when replying to tickets. Once verified, you can set it in reply address settings.","连接域名后，即可用你的邮箱回复工单。验证后可在回复地址设置中选择。","^/app/settings/email/domains/?$","text","div[class*=\"_email-settings__wrapper_\"] > div[class*=\"_email-settings__header_\"] > span",""],
+    ["Connect your first domain","连接你的第一个域名","^/app/settings/email/domains/?$","text","div[class*=\"_email-settings__empty-state-wrapper_\"] > div[class*=\"_empty-state_\"][class*=\"_empty-state--full_\"] > h4[class*=\"_empty-state__title_\"]",""],
+    ["Domains","域名","^/app/settings/email/forwarding-addresses/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Domains","域名","^/app/settings/email/reply-addresses/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Domains","域名","^/app/settings/email/domains/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Email forwarding promo banner","邮件转发横幅","^/app/settings/email/forwarding-addresses/?$","attr:alt","div[class*=\"_promo-banner_\"] > div[class*=\"_promo-banner__additional-content_\"] > img",""],
+    ["Forward a copy of your emails to Text App to turn them into tickets.","将邮件副本转发至 Text，即可将邮件转为工单。","^/app/settings/email/forwarding-addresses/?$","text","div[class*=\"_email-settings__wrapper_\"] > div[class*=\"_email-settings__header_\"] > span",""],
+    ["Forwarding address","转发地址","^/app/settings/email/forwarding-addresses/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Forwarding addresses","转发地址","^/app/settings/email/forwarding-addresses/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Forwarding addresses","转发地址","^/app/settings/email/reply-addresses/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Forwarding addresses","转发地址","^/app/settings/email/domains/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Learn more","了解详情","^/app/settings/email/forwarding-addresses/?$","text","div[class*=\"_email-settings__header_\"] > span > a[class*=\"_link_\"]",""],
+    ["Learn more","了解详情","^/app/settings/email/reply-addresses/?$","text","div[class*=\"_email-settings__header_\"] > span > a[class*=\"_link_\"]",""],
+    ["Learn more","了解详情","^/app/settings/email/domains/?$","text","div[class*=\"_email-settings__header_\"] > span > a[class*=\"_link_\"]",""],
+    ["Learn more","了解详情","^/app/settings/email/forwarding-addresses/?$","text","div[class*=\"_promo-banner__content__cta_\"] > a[class*=\"_btn_\"][class*=\"_btn--text_\"] > div[class*=\"_btn__content_\"]",""],
+    ["New","新建","^/app/settings/email/forwarding-addresses/?$","text","div > button[class*=\"_btn_\"][class*=\"_btn--primary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["New","新建","^/app/settings/email/reply-addresses/?$","text","div > button[class*=\"_btn_\"][class*=\"_btn--primary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["New","新建","^/app/settings/email/domains/?$","text","div > button[class*=\"_btn_\"][class*=\"_btn--primary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Reply address","回复地址","^/app/settings/email/reply-addresses/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Reply addresses","回复地址","^/app/settings/email/forwarding-addresses/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Reply addresses","回复地址","^/app/settings/email/reply-addresses/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Reply addresses","回复地址","^/app/settings/email/domains/?$","text","div[class*=\"_tabs__list_\"] > a[class*=\"_tab_\"][class*=\"_tab--md_\"] > span[class*=\"_tab__label_\"]",""],
+    ["Set the name and address customers will see when you reply to tickets.","设置你回复工单时客户看到的名称和地址。","^/app/settings/email/reply-addresses/?$","text","div[class*=\"_email-settings__wrapper_\"] > div[class*=\"_email-settings__header_\"] > span",""],
+    ["Set up address","设置地址","^/app/settings/email/forwarding-addresses/?$","text","div[class*=\"_promo-banner__content__cta_\"] > button[class*=\"_btn_\"][class*=\"_btn--highlight_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Set up forwarding from your email address","设置从你的电子邮件地址转发","^/app/settings/email/forwarding-addresses/?$","text","div[class*=\"_promo-banner_\"] > div[class*=\"_promo-banner__content_\"] > div[class*=\"_display-md_\"][class*=\"_display--bold_\"]",""],
+    ["Tabs","页签","^/app/settings/email/forwarding-addresses/?$","attr:aria-label","div[class*=\"_wrapper_\"] > div[class*=\"_tabs_\"][class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"]",""],
+    ["Tabs","页签","^/app/settings/email/reply-addresses/?$","attr:aria-label","div[class*=\"_wrapper_\"] > div[class*=\"_tabs_\"][class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"]",""],
+    ["Tabs","页签","^/app/settings/email/domains/?$","attr:aria-label","div[class*=\"_wrapper_\"] > div[class*=\"_tabs_\"][class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"]",""],
+    ["Chat instantly","即时聊天","^/app/settings/chat-page/?$","text","ul[class*=\"_chat-page-banner__benefits_\"] > li[class*=\"_chat-page-banner__benefit_\"] > span",""],
+    ["chat page preview","聊天页面预览","^/app/settings/chat-page/?$","attr:alt","div[class*=\"_promo-banner_\"] > div[class*=\"_promo-banner__additional-content_\"][class*=\"_chat-page-banner__image-wrapper_\"] > img[class*=\"_chat-page-banner__image_\"]",""],
+    ["direct link to your chat","聊天直达链接","^/app/settings/chat-page/?$","text","div[class*=\"_promo-banner__content_\"][class*=\"_chat-page-banner__content_\"] > span > span",""],
+    ["in newsletters, websites, and social media so customers always have a way to chat with you.","分享到简报、网站和社交媒体，方便客户随时发起聊天。","^/app/settings/chat-page/?$","text","div[class*=\"_promo-banner_\"] > div[class*=\"_promo-banner__content_\"][class*=\"_chat-page-banner__content_\"] > span",""],
+    ["Let customers start a chat from posters, packaging, or events.","让客户通过海报、包装或活动发起聊天。","^/app/settings/chat-page/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div[class*=\"_share-channel-cards__card-body_\"] > span[class*=\"_share-channel-cards__card-description_\"]",""],
+    ["No setup","无需设置","^/app/settings/chat-page/?$","text","ul[class*=\"_chat-page-banner__benefits_\"] > li[class*=\"_chat-page-banner__benefit_\"] > span",""],
+    ["Post your chat link on X and let followers message you instantly.","在 X 分享聊天链接，让关注者即时联系你。","^/app/settings/chat-page/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div[class*=\"_share-channel-cards__card-body_\"] > span[class*=\"_share-channel-cards__card-description_\"]",""],
+    ["QR code","二维码","^/app/settings/chat-page/?$","text","div[class*=\"_share-channel-cards__card-body_\"] > div[class*=\"_share-channel-cards__card-header_\"] > span",""],
+    ["Share a","将","^/app/settings/chat-page/?$","text","div[class*=\"_promo-banner_\"] > div[class*=\"_promo-banner__content_\"][class*=\"_chat-page-banner__content_\"] > span",""],
+    ["Share anywhere","随处分享","^/app/settings/chat-page/?$","text","ul[class*=\"_chat-page-banner__benefits_\"] > li[class*=\"_chat-page-banner__benefit_\"] > span",""],
+    ["Share your chat link on Facebook to bring conversations into your inbox.","在 Facebook 分享聊天链接，将对话汇集到收件箱。","^/app/settings/chat-page/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div[class*=\"_share-channel-cards__card-body_\"] > span[class*=\"_share-channel-cards__card-description_\"]",""],
+    ["Share","分享","^/app/settings/chat-page/?$","text","div[class*=\"_share-channel-cards__card-body_\"] > a[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Chatting Team","聊天团队","^/app/settings/routing/chat-routing/website-widget/?$","text","div[class*=\"_label-trigger_\"] > div[class*=\"_label-text_\"] > span[class*=\"_label-segment_\"]",""],
+    ["Search canned responses","搜索快捷回复","^/app/settings/canned-responses/?$","attr:placeholder","div[class*=\"_canned-responses__filters-search_\"][class*=\"_search-input_\"] > div[class*=\"_search-input__input-wrapper_\"][class*=\"_search-input__input-wrapper--sm_\"] > input",""],
+    ["Add element","添加元素","^/app/settings/forms/post-chat/?$","text","div[class*=\"_add-element-menu__trigger_\"] > button[class*=\"_btn_\"][class*=\"_btn--secondary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Confirmation message","确认消息","^/app/settings/forms/post-chat/?$","text","div[class*=\"_rich-text_\"][class*=\"_chat-rating-element__comment_\"] > label[class*=\"_field-label_\"] > span",""],
+    ["Delete element","删除元素","^/app/settings/forms/post-chat/?$","attr:aria-label","div[class*=\"_form-field-element_\"] > div[class*=\"_form-field-element__delete_\"] > button[class*=\"_btn_\"][class*=\"_btn--plain_\"]",""],
+    ["Rating question","评分问题","^/app/settings/forms/post-chat/?$","text","div[class*=\"_rich-text_\"] > label[class*=\"_field-label_\"] > span",""],
+    ["Required","必填","^/app/settings/forms/post-chat/?$","text","div[class*=\"_checkbox_\"][class*=\"_form-field-element__required_\"] > label[class*=\"_checkbox__label_\"] > div[class*=\"_checkbox__text_\"]",""],
+    ["Confirmation message","确认消息","^/app/settings/forms/offline/?$","text","div[class*=\"_rich-text_\"] > label[class*=\"_field-label_\"] > span",""],
+    ["Message text","消息正文","^/app/settings/forms/offline/?$","text","div[class*=\"_rich-text_\"] > label[class*=\"_field-label_\"] > span",""],
+    ["Action Card","操作卡片","^/app/settings/integrations/apps/?$","attr:aria-label","div[class*=\"_main-wrapper_\"] > div[class*=\"_action-card_\"][class*=\"_action-card--has-overlay_\"] > button[class*=\"_action-card__action_\"]",""],
+    ["Add chat leads to your mailing lists","将聊天线索加入邮件列表","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Adobe Commerce logo","Adobe Commerce 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Apps","应用","^/app/settings/integrations/apps/?$","text","div[class*=\"_content-header_\"] > div[class*=\"_content-header__left-node_\"] > h5",""],
+    ["BigCommerce logo","BigCommerce 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Bring Messenger chats into your inbox","在收件箱中接收 Messenger 聊天","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["ChatGPT logo","ChatGPT 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Claude logo","Claude 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Close orders right inside the chat.","直接在聊天中完成订单。","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Connect your tools with Text","将你的工具连接到 Text","^/app/settings/integrations/apps/?$","text","div[class*=\"_root_\"] > div[class*=\"_intro_\"] > h4",""],
+    ["Convert conversations into sales.","将对话转化为销售。","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Get customer conversation updates in Slack","在 Slack 接收客户对话动态","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Google Calendar logo","Google Calendar 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Handle payments directly in conversations","直接在对话中处理付款","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["HubSpot logo","HubSpot 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Instagram logo","Instagram 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Integration apps banner","应用集成横幅","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_app-frame-content__page-content-container__content-wrapper__content_\"][class*=\"_settings-layout__content_\"] > div[class*=\"_root_\"] > img",""],
+    ["Mailchimp logo","Mailchimp 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Manage WhatsApp chats in your inbox","在收件箱管理 WhatsApp 聊天","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Medusa logo","Medusa 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Messenger logo","Messenger 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Reply to Instagam DMs from your inbox","在收件箱回复 Instagram 私信","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Salesforce logo","Salesforce 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Schedule meetings while chatting","在聊天时安排会议","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["See carts and orders while chatting","在聊天时查看购物车和订单","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Segment logo","Segment 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Send and receive SMS from your inbox","在收件箱收发短信","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Shopify logo","Shopify 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Slack logo","Slack 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Stripe logo","Stripe 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Sync CRM data with HubSpot","与 HubSpot 同步 CRM 数据","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Sync CRM data with Salesforce","与 Salesforce 同步 CRM 数据","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Sync customer details with Segment","与 Segment 同步客户资料","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Turn customer chats into revenue.","将客户聊天转化为收入。","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Twilio logo","Twilio 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Use Text inside ChatGPT","在 ChatGPT 中使用 Text","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["WhatsApp logo","WhatsApp 标志","^/app/settings/integrations/apps/?$","attr:alt","div[class*=\"_logo-row_\"] > div[class*=\"_logo-wrapper_\"] > img",""],
+    ["Work in Text from Claude","通过 Claude 使用 Text","^/app/settings/integrations/apps/?$","text","div[class*=\"_action-card__column_\"][class*=\"_action-card__column--first_\"] > div > span[class*=\"_description_\"]",""],
+    ["Work with customer data and business tools without leaving conversations.","无需离开对话，即可使用客户数据和业务工具。","^/app/settings/integrations/apps/?$","text","div[class*=\"_root_\"] > div[class*=\"_intro_\"] > span",""],
+    ["Automate reporting to Google Sheets","自动将报表发送到 Google Sheets","^/app/settings/integrations/api-usage/?$","text","li > a[class*=\"_api-usage-empty-state__case-study_\"] > span[class*=\"_api-usage-empty-state__case-study-title_\"]",""],
+    ["Browse all APIs and discover integration options.","浏览所有 API，了解可用的集成方式。","^/app/settings/integrations/api-usage/?$","text","div[class*=\"_api-usage-empty-state__tile_\"] > div[class*=\"_api-usage-empty-state__tile-text_\"] > span",""],
+    ["Centralize order support for Shopify","集中处理 Shopify 订单支持","^/app/settings/integrations/api-usage/?$","text","li > a[class*=\"_api-usage-empty-state__case-study_\"] > span[class*=\"_api-usage-empty-state__case-study-title_\"]",""],
+    ["Explore the documentation","查看文档","^/app/settings/integrations/api-usage/?$","attr:aria-label","div[class*=\"_api-usage-empty-state__cards_\"] > div[class*=\"_main-wrapper_\"] > a[class*=\"_action-card_\"][class*=\"_api-usage-empty-state__external-card_\"]",""],
+    ["Explore the documentation","查看文档","^/app/settings/integrations/api-usage/?$","text","div[class*=\"_api-usage-empty-state__tile_\"] > div[class*=\"_api-usage-empty-state__tile-text_\"] > span",""],
+    ["Get a personal access token","获取个人访问令牌","^/app/settings/integrations/api-usage/?$","text","div[class*=\"_api-usage-empty-state__tile_\"] > div[class*=\"_api-usage-empty-state__tile-text_\"] > span",""],
+    ["Make your first API call","发起第一次 API 调用","^/app/settings/integrations/api-usage/?$","text","div[class*=\"_api-usage-empty-state__tile_\"] > div[class*=\"_api-usage-empty-state__tile-text_\"] > span",""],
+    ["Make your first API call","发起第一次 API 调用","^/app/settings/integrations/api-usage/?$","attr:aria-label","div[class*=\"_main-wrapper_\"] > div[class*=\"_action-card_\"][class*=\"_action-card--has-overlay_\"] > button[class*=\"_action-card__action_\"]",""],
+    ["See how the API responds in a live playground.","在交互式试用环境中查看 API 的响应。","^/app/settings/integrations/api-usage/?$","text","div[class*=\"_api-usage-empty-state__tile_\"] > div[class*=\"_api-usage-empty-state__tile-text_\"] > span",""],
+    ["Sync customer data to HubSpot","将客户数据同步到 HubSpot","^/app/settings/integrations/api-usage/?$","text","li > a[class*=\"_api-usage-empty-state__case-study_\"] > span[class*=\"_api-usage-empty-state__case-study-title_\"]",""],
+    ["Use it to access the API and identify your requests.","使用它访问 API 并识别你的请求。","^/app/settings/integrations/api-usage/?$","text","div[class*=\"_api-usage-empty-state__tile_\"] > div[class*=\"_api-usage-empty-state__tile-text_\"] > span",""],
+    ["Use the API to connect your tools, automate tasks, and access Text data outside the app.","使用 API 连接工具、自动执行任务，并在应用之外访问 Text 数据。","^/app/settings/integrations/api-usage/?$","text","div[class*=\"_api-usage-empty-state__content_\"] > div[class*=\"_api-usage-empty-state__intro_\"] > span",""],
+    ["Ask AI assistants about your Text data. Works with Claude, ChatGPT, and any MCP-compatible tool.","向 AI 助手询问 Text 中的数据。支持 Claude、ChatGPT 及任何兼容 MCP 的工具。","^/app/settings/integrations/mcp/?$","text","div[class*=\"_mcp-connect-card__content_\"] > div[class*=\"_mcp-connect-card__heading_\"] > span",""],
+    ["ChatGPT setup","设置 ChatGPT","^/app/settings/integrations/mcp/?$","text","div[class*=\"_installation-accordion__label_\"] > div[class*=\"_installation-accordion__heading_\"] > div",""],
+    ["Claude setup","设置 Claude","^/app/settings/integrations/mcp/?$","text","div[class*=\"_installation-accordion__label_\"] > div[class*=\"_installation-accordion__heading_\"] > div",""],
+    ["Connect with AI assistants","连接 AI 助手","^/app/settings/integrations/mcp/?$","text","div[class*=\"_mcp-connect-card__content_\"] > div[class*=\"_mcp-connect-card__heading_\"] > span",""],
+    ["Tabs","页签","^/app/settings/security/trusted-domains/?$","attr:aria-label","div[class*=\"_trusted-domains-settings__tabs-container_\"] > div[class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"]",""],
+    ["Allow members to ban customers","允许成员封禁客户","^/app/settings/security/banned-customers/?$","text","div[class*=\"_members-can-ban-customers-setting_\"] > div[class*=\"_members-can-ban-customers-setting__label_\"] > span",""],
+    ["Email addresses and domains added to your trusted list won't be treated as spam.","来自可信列表中的电子邮件地址或域名的邮件不会被视为垃圾邮件。","^/app/settings/security/spam/?$","text","div[class*=\"_spam-settings_\"] > div[class*=\"_spam-settings__content_\"] > span[class*=\"_trusted-addresses-tab__content-description_\"]",""],
+    ["No trusted emails found. Add some using the form above.","没有可信邮件地址。请使用上方表单添加。","^/app/settings/security/spam/?$","text","div[class*=\"_spam-settings__content_\"] > div[class*=\"_spam-addresses-table_\"] > span",""],
+    ["Tabs","页签","^/app/settings/security/spam/?$","attr:aria-label","div[class*=\"_spam-settings__tabs-container_\"] > div[class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"]",""],
+    ["trusted","可信列表","^/app/settings/security/spam/?$","text","form[class*=\"_add-spam-address-form_\"] > button[class*=\"_btn_\"][class*=\"_btn--primary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Type domain or email address...","输入域名或电子邮件地址…","^/app/settings/security/spam/?$","attr:placeholder","div > div[class*=\"_input_\"][class*=\"_input--md_\"] > input",""],
+    ["Select how teammates can log in to keep access simple and secure.","选择成员的登录方式，让访问保持简单和安全。","^/app/settings/security/login/?$","text","div[class*=\"_grid_\"][class*=\"_login-settings__container_\"] > div[class*=\"_column_\"] > span",""],
+    ["Add or update your credit","添加或更新","^/app/settings/billing/payment-details/?$","text","div[class*=\"_empty-credit-card-tile_\"][class*=\"_card-tile_\"] > div[class*=\"_card-tile__content_\"] > span",""],
+    ["Add or update your invoice","添加或更新","^/app/settings/billing/payment-details/?$","text","div[class*=\"_empty-invoice-details-tile_\"][class*=\"_card-tile_\"] > div[class*=\"_card-tile__content_\"] > span",""],
+    ["Card details","银行卡信息","^/app/settings/billing/payment-details/?$","text","div[class*=\"_empty-credit-card-tile_\"][class*=\"_card-tile_\"] > div[class*=\"_card-tile__content_\"] > h4",""],
+    ["details.","发票信息。","^/app/settings/billing/payment-details/?$","text","div[class*=\"_empty-invoice-details-tile_\"][class*=\"_card-tile_\"] > div[class*=\"_card-tile__content_\"] > span",""],
+    ["Invoice details","发票信息","^/app/settings/billing/payment-details/?$","text","div[class*=\"_empty-invoice-details-tile_\"][class*=\"_card-tile_\"] > div[class*=\"_card-tile__content_\"] > h4",""],
+    ["or debit card details.","信用卡或借记卡信息。","^/app/settings/billing/payment-details/?$","text","div[class*=\"_empty-credit-card-tile_\"][class*=\"_card-tile_\"] > div[class*=\"_card-tile__content_\"] > span",""],
+    ["Placeholder image of credit card","信用卡占位图","^/app/settings/billing/payment-details/?$","attr:alt","div[class*=\"_empty-credit-card-tile_\"][class*=\"_card-tile_\"] > div > img",""],
+    ["Description","说明","^/app/settings/billing/invoices/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["About chat routing rules","关于聊天路由规则","^/app/settings/routing/chat-routing/whatsapp/?$","attr:aria-label","div[class*=\"_chat-rules__title_\"] > div > div",""],
+    ["If a WhatsApp chat doesn't match a rule, route it to","WhatsApp 聊天不匹配任何规则时，将其转给","^/app/settings/routing/chat-routing/whatsapp/?$","text","div[class*=\"_route-fallback__content_\"] > div[class*=\"_route-fallback__label-row_\"] > span",""],
+    ["Tabs","页签","^/app/settings/routing/chat-routing/whatsapp/?$","attr:aria-label","div[class*=\"_chat-rules__content_\"][class*=\"_channels-layout__content_\"] > div[class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"][class*=\"_channels-layout__tabs-list_\"]",""],
+    ["About chat routing rules","关于聊天路由规则","^/app/settings/routing/chat-routing/messenger/?$","attr:aria-label","div[class*=\"_chat-rules__title_\"] > div > div",""],
+    ["If a Messenger chat doesn't match a rule, route it to","Messenger 聊天不匹配任何规则时，将其转给","^/app/settings/routing/chat-routing/messenger/?$","text","div[class*=\"_route-fallback__content_\"] > div[class*=\"_route-fallback__label-row_\"] > span",""],
+    ["Tabs","页签","^/app/settings/routing/chat-routing/messenger/?$","attr:aria-label","div[class*=\"_chat-rules__content_\"][class*=\"_channels-layout__content_\"] > div[class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"][class*=\"_channels-layout__tabs-list_\"]",""],
+    ["About chat routing rules","关于聊天路由规则","^/app/settings/routing/chat-routing/twilio/?$","attr:aria-label","div[class*=\"_chat-rules__title_\"] > div > div",""],
+    ["If an SMS message doesn't match a rule, route it to","短信不匹配任何规则时，将其转给","^/app/settings/routing/chat-routing/twilio/?$","text","div[class*=\"_route-fallback__content_\"] > div[class*=\"_route-fallback__label-row_\"] > span",""],
+    ["Tabs","页签","^/app/settings/routing/chat-routing/twilio/?$","attr:aria-label","div[class*=\"_chat-rules__content_\"][class*=\"_channels-layout__content_\"] > div[class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"][class*=\"_channels-layout__tabs-list_\"]",""],
+    ["About chat routing rules","关于聊天路由规则","^/app/settings/routing/chat-routing/instagram/?$","attr:aria-label","div[class*=\"_chat-rules__title_\"] > div > div",""],
+    ["If an Instagram chat doesn't match a rule, route it to","Instagram 聊天不匹配任何规则时，将其转给","^/app/settings/routing/chat-routing/instagram/?$","text","div[class*=\"_route-fallback__content_\"] > div[class*=\"_route-fallback__label-row_\"] > span",""],
+    ["Tabs","页签","^/app/settings/routing/chat-routing/instagram/?$","attr:aria-label","div[class*=\"_chat-rules__content_\"][class*=\"_channels-layout__content_\"] > div[class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"][class*=\"_channels-layout__tabs-list_\"]",""],
+    ["Learn more","了解详情","^/app/settings/tags/chat/?$","text","div[class*=\"_tags__description_\"] > a[class*=\"_btn_\"][class*=\"_btn--link-light_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Tabs","页签","^/app/settings/tags/chat/?$","attr:aria-label","div[class*=\"_tags-layout__tabs_\"] > div[class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"]",""],
+    ["Tags help you organize conversations. Use them to filter results in archives and analyze data in reports.","标签有助于整理对话，可用于筛选归档记录和分析报表数据。","^/app/settings/tags/chat/?$","text","div[class*=\"_app-frame__page-content-container__content-wrapper_\"] > div[class*=\"_app-frame-content__page-content-container__content-wrapper__content_\"][class*=\"_settings-layout__content_\"] > div[class*=\"_tags__description_\"]",""],
+    ["Learn more","了解详情","^/app/settings/tags/ticket/?$","text","div[class*=\"_tags__description_\"] > a[class*=\"_btn_\"][class*=\"_btn--link-light_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Tabs","页签","^/app/settings/tags/ticket/?$","attr:aria-label","div[class*=\"_tags-layout__tabs_\"] > div[class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"]",""],
+    ["Tags help you organize conversations. Use them to filter results in archives and analyze data in reports.","标签有助于整理对话，可用于筛选归档记录和分析报表数据。","^/app/settings/tags/ticket/?$","text","div[class*=\"_app-frame__page-content-container__content-wrapper_\"] > div[class*=\"_app-frame-content__page-content-container__content-wrapper__content_\"][class*=\"_settings-layout__content_\"] > div[class*=\"_tags__description_\"]",""],
+    ["Description","说明","^/app/settings/integrations/api-access/webhooks/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Endpoint","端点","^/app/settings/integrations/api-access/webhooks/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Trigger","触发条件","^/app/settings/integrations/api-access/webhooks/?$","text","div[class*=\"_header__content__text_\"] > div > div",""],
+    ["Email addresses and domains added to your trusted list won't be treated as spam.","来自可信列表中的电子邮件地址或域名的邮件不会被视为垃圾邮件。","^/app/settings/security/spam/trusted/?$","text","div[class*=\"_spam-settings_\"] > div[class*=\"_spam-settings__content_\"] > span[class*=\"_trusted-addresses-tab__content-description_\"]",""],
+    ["No trusted emails found. Add some using the form above.","没有可信邮件地址。请使用上方表单添加。","^/app/settings/security/spam/trusted/?$","text","div[class*=\"_spam-settings__content_\"] > div[class*=\"_spam-addresses-table_\"] > span",""],
+    ["Tabs","页签","^/app/settings/security/spam/trusted/?$","attr:aria-label","div[class*=\"_spam-settings__tabs-container_\"] > div[class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"]",""],
+    ["trusted","可信列表","^/app/settings/security/spam/trusted/?$","text","form[class*=\"_add-spam-address-form_\"] > button[class*=\"_btn_\"][class*=\"_btn--primary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Type domain or email address...","输入域名或电子邮件地址…","^/app/settings/security/spam/trusted/?$","attr:placeholder","div > div[class*=\"_input_\"][class*=\"_input--md_\"] > input",""],
+    ["blocked","阻止列表","^/app/settings/security/spam/blocked/?$","text","form[class*=\"_add-spam-address-form_\"] > button[class*=\"_btn_\"][class*=\"_btn--primary_\"] > div[class*=\"_btn__content_\"]",""],
+    ["Email addresses and domains added to your blocked list will be treated as spam.","来自阻止列表中的电子邮件地址或域名的邮件会被视为垃圾邮件。","^/app/settings/security/spam/blocked/?$","text","div[class*=\"_spam-settings_\"] > div[class*=\"_spam-settings__content_\"] > span[class*=\"_blocked-addresses-tab__content-description_\"]",""],
+    ["Tabs","页签","^/app/settings/security/spam/blocked/?$","attr:aria-label","div[class*=\"_spam-settings__tabs-container_\"] > div[class*=\"_tabs_\"] > div[class*=\"_tabs__list_\"]",""],
+    ["Type domain or email address...","输入域名或电子邮件地址…","^/app/settings/security/spam/blocked/?$","attr:placeholder","div > div[class*=\"_input_\"][class*=\"_input--md_\"] > input",""],
+    ["Search canned responses","搜索快捷回复","^/app/settings/canned-responses/chat/?$","attr:placeholder","div[class*=\"_canned-responses__filters-search_\"][class*=\"_search-input_\"] > div[class*=\"_search-input__input-wrapper_\"][class*=\"_search-input__input-wrapper--sm_\"] > input",""],
+    ["Search canned responses","搜索快捷回复","^/app/settings/canned-responses/ticket/?$","attr:placeholder","div[class*=\"_canned-responses__filters-search_\"][class*=\"_search-input_\"] > div[class*=\"_search-input__input-wrapper_\"][class*=\"_search-input__input-wrapper--sm_\"] > input",""],
+    ["No trusted domains yet","暂无可信域名","^/app/settings/security/trusted-domains/?$","text","[class*=\"_trusted-domains-table_\"] h4[class*=\"_empty-state__title_\"]",""],
+    ["Add a domain above, or pick one from the domains detected on your websites.","在上方添加域名，或从网站检测到的域名中选择。","^/app/settings/security/trusted-domains/?$","text","[class*=\"_trusted-domains-table_\"] [class*=\"_empty-state__description_\"]",""],
+    ["View detected domains","查看已检测到的域名","^/app/settings/security/trusted-domains/?$","text","[class*=\"_trusted-domains-table_\"] [class*=\"_empty-state__actions_\"] button > [class*=\"_btn__content_\"]",""],
+    ["Send data to your tools automatically","自动将数据发送到你的工具","^/app/settings/integrations/api-access/webhooks/?$","text","[class*=\"_webhooks-empty-state_\"] h4[class*=\"_empty-state__title_\"]",""],
+    ["Set up webhooks to send real-time updates to your systems when selected actions happen in Text.","设置 Webhook，在 Text 中发生所选操作时实时通知你的系统。","^/app/settings/integrations/api-access/webhooks/?$","text","[class*=\"_webhooks-empty-state_\"] [class*=\"_empty-state__description_\"]",""],
+    ["Create webhook","创建 Webhook","^/app/settings/integrations/api-access/webhooks/?$","text","[class*=\"_webhooks-empty-state__actions_\"] button > [class*=\"_btn__content_\"]",""],
+    ["Send custom form at any time during a chat to collect missing customer details.","在聊天中随时发送自定义表单，补充缺失的客户资料。","^/app/settings/custom-forms/?$","text","[class*=\"_custom-forms-settings__description_\"] > span",""],
+    ["Collect customer details before a chat starts.","在开始聊天前收集客户资料。","^/app/settings/forms/pre-chat/?$","text","span[class*=\"_forms-settings__description_\"]",""],
+    ["Message","消息","^/app/settings/forms/pre-chat/?$","text","div[class*=\"_form-field-element_\"]:has(> [class*=\"_form-field-element__card_\"][class*=\"_accordion--open_\"]):has([class*=\"_information-element__editor_\"]) span[class*=\"_form-field-element__title_\"]",""],
+    ["Message","消息","^/app/settings/forms/pre-chat/?$","text","[class*=\"_information-element__editor_\"] > label[class*=\"_field-label_\"] > span",""],
+    ["Add element","添加元素","^/app/settings/forms/pre-chat/?$","text","[class*=\"_add-element-menu__trigger_\"] > button > [class*=\"_btn__content_\"]",""],
+    ["Delete element","删除元素","^/app/settings/forms/pre-chat/?$","attr:aria-label","[class*=\"_form-field-element__delete_\"] > button",""],
+    ["Show the pre-chat form when a customer starts a chat from a campaign.","客户通过活动发起聊天时显示聊天前表单。","^/app/settings/forms/pre-chat/?$","text","[class*=\"_pre-chat-form__campaign-setting-label_\"] > [class*=\"_pre-chat-form__campaign-setting-text_\"]",""],
+    ["Collect customer details when a new chat gets no response.","新聊天无人回复时收集客户资料。","^/app/settings/forms/no-response/?$","text","span[class*=\"_forms-settings__description_\"]",""],
+    ["If the assignee doesn't reply to a new chat, send message after","负责人未回复新聊天时，等待","^/app/settings/forms/no-response/?$","text","[class*=\"_no-response-form__timeout_\"] > [class*=\"_no-response-form__timeout-label_\"]",""],
+    ["minutes","分钟后发送消息","^/app/settings/forms/no-response/?$","text","[class*=\"_no-response-form__timeout-controls_\"] > span",""],
+    ["Message","消息","^/app/settings/forms/no-response/?$","text","[class*=\"_no-response-form_\"] [class*=\"_accordion--open_\"][class*=\"_form-text-block_\"] span[class*=\"_form-text-block__title_\"]",""],
+    ["Confirmation message","确认消息","^/app/settings/forms/no-response/?$","text","[class*=\"_no-response-form_\"] [class*=\"_accordion--open_\"][class*=\"_form-text-block_\"] span[class*=\"_form-text-block__title_\"]",""],
+    ["Message text","消息正文","^/app/settings/forms/no-response/?$","text","[class*=\"_no-response-form_\"] [class*=\"_rich-text_\"] > label[class*=\"_field-label_\"] > span",""],
+    ["Customer can leave email","客户可以留下邮箱","^/app/settings/forms/no-response/?$","text","label[class*=\"_no-response-form__email-toggle_\"] > span",""],
+    ["Customer can leave email","客户可以留下邮箱","^/app/settings/forms/no-response/?$","attr:aria-label","label[class*=\"_no-response-form__email-toggle_\"] input[class*=\"_switch__input_\"]",""],
+    ["Form type","表单类型","^/app/settings/forms/offline/?$","text","section[class*=\"_offline-form-type-selector_\"] > span",""],
+    ["Collect customer details when your team is offline.","团队离线时收集客户资料。","^/app/settings/forms/offline/?$","text","[class*=\"_forms-settings__description-wrapper_\"] > span",""],
+    ["Contact form","联系表单","^/app/settings/forms/offline/?$","text","section[class*=\"_offline-form-type-selector_\"] [class*=\"_offline-form-type-selector__card_\"] [class*=\"_thumbnail-selectable-card__content_\"] > span",""],
+    ["Customers can chat and leave an email.","客户可以发起聊天并留下邮箱。","^/app/settings/forms/offline/?$","text","section[class*=\"_offline-form-type-selector_\"] [class*=\"_offline-form-type-selector__card_\"] [class*=\"_thumbnail-selectable-card__content_\"] > span",""],
+    ["Ticket form","工单表单","^/app/settings/forms/offline/?$","text","section[class*=\"_offline-form-type-selector_\"] [class*=\"_offline-form-type-selector__card_\"] [class*=\"_thumbnail-selectable-card__content_\"] > span",""],
+    ["Customers leave a ticket instead of chatting.","客户可以提交工单。","^/app/settings/forms/offline/?$","text","section[class*=\"_offline-form-type-selector_\"] [class*=\"_offline-form-type-selector__card_\"] [class*=\"_thumbnail-selectable-card__content_\"] > span",""],
+    ["Ticket field will add extra information to all your tickets.","工单字段会为所有工单添加额外信息。","^/app/settings/tickets/ticket-fields/add/?$","text","[class*=\"_custom-field-form-content_\"] [class*=\"_custom-field-form-content__section_\"] > span",""],
+    ["Enter field name","输入字段名称","^/app/settings/tickets/ticket-fields/add/?$","attr:placeholder","[class*=\"_custom-field-form-content_\"] input",""],
+    ["Select field type","选择字段类型","^/app/settings/tickets/ticket-fields/add/?$","text","[class*=\"_custom-field-form-content_\"] button[role=combobox] [class*=\"_picker-trigger-empty-state__placeholder_\"]",""],
+    ["Select field type","选择字段类型","^/app/settings/tickets/ticket-fields/add/?$","attr:aria-label","[class*=\"_custom-field-form-content_\"] button[role=combobox] [class*=\"_picker-trigger-empty-state__placeholder_\"]",""],
+    ["Who can update this field?","谁可以更新此字段？","^/app/settings/tickets/ticket-fields/add/?$","text","[class*=\"_custom-field-form-content_\"] div[class*=\"_custom-field-form-content__role-options_\"][role=\"group\"] > div",""],
+    ["Who can update this field?","谁可以更新此字段？","^/app/settings/tickets/ticket-fields/add/?$","attr:aria-label","[class*=\"_custom-field-form-content_\"] div[class*=\"_custom-field-form-content__role-options_\"][role=\"group\"]",""],
+    ["Admins and members","管理员和成员","^/app/settings/tickets/ticket-fields/add/?$","text","[class*=\"_custom-field-form-content_\"] div[class*=\"_custom-field-form-content__role-options_\"][role=\"group\"] [class*=\"_custom-field-form-content__role-radio-list_\"] [class*=\"_radio-button__text_\"]",""],
+    ["Admins only","仅管理员","^/app/settings/tickets/ticket-fields/add/?$","text","[class*=\"_custom-field-form-content_\"] div[class*=\"_custom-field-form-content__role-options_\"][role=\"group\"] [class*=\"_custom-field-form-content__role-radio-list_\"] [class*=\"_radio-button__text_\"]",""],
+    ["Only via API","仅通过 API","^/app/settings/tickets/ticket-fields/add/?$","text","[class*=\"_custom-field-form-content_\"] div[class*=\"_custom-field-form-content__role-options_\"][role=\"group\"] [class*=\"_custom-field-form-content__role-radio-list_\"] [class*=\"_radio-button__text_\"]",""],
+    ["More options","更多选项","^/app/settings/tickets/ticket-fields/add/?$","text","[class*=\"_custom-field-form-content_\"] button[class*=\"_custom-field-form-content__advanced-toggle_\"] > [class*=\"_btn__content_\"]",""],
+    ["Full name","姓名","^/app/settings/teammates/me/edit/?$","text","form[class*=\"_details-form__form_\"] label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["Email","邮箱","^/app/settings/teammates/me/edit/?$","text","form[class*=\"_details-form__form_\"] label[class*=\"_form-field-label__left-node_\"] > span",""],
+    ["Enter value","输入内容","^/app/settings/teammates/me/edit/?$","attr:placeholder","form[class*=\"_details-form__form_\"] input",""],
+    ["Role","角色","^/app/settings/teammates/me/edit/?$","text","form[class*=\"_details-form__form_\"] [class*=\"_section_\"] > h5",""],
+    ["Change owner","更换所有者","^/app/settings/teammates/me/edit/?$","text","form[class*=\"_details-form__form_\"] [class*=\"_section_\"] > h5",""],
+    ["Change organization owner","更换组织所有者","^/app/settings/teammates/me/edit/?$","text","form[class*=\"_details-form__form_\"] button > [class*=\"_btn__content_\"]",""],
+    ["Two-factor authentication (2FA)","双重身份验证（2FA）","^/app/settings/teammates/me/edit/?$","text","form[class*=\"_details-form__form_\"] [class*=\"_section_\"] > h5",""],
+    ["Availability after login","登录后的接待状态","^/app/settings/teammates/me/edit/chat-settings/?$","text","form[class*=\"_details-form__form_\"] [class*=\"_section_\"] > h5",""],
+    ["team settings","团队设置","^/app/settings/teammates/me/edit/ticket-settings/?$","text","[class*=\"_field-description_\"][class*=\"_checkbox__helper_\"] a[class*=\"_link_\"]",""],
+    ["More actions","更多操作","^/app/settings/teammates/me/edit/ticket-settings/?$","attr:aria-label","[class*=\"_action-bar__menu-wrapper_\"] button",""],
+    ["Create Text account","创建 Text 账号","^/app/onboarding/list/?$","text","[class*=\"_checklist-step__header_\"] > span[class*=\"_checklist-step__title--completed_\"]",""],
+    ["Train AI Agent with knowledge","用知识训练 AI 客服","^/app/onboarding/list/?$","text","[class*=\"_checklist-step__header_\"] > span[class*=\"_checklist-step__title--completed_\"]",""],
+    ["Invite your team","邀请团队成员","^/app/onboarding/list/?$","text","[class*=\"_checklist-action-card__content_\"] > span",""],
+    ["Talk to a Product Expert","与产品专家交流","^/app/onboarding/list/?$","text","[class*=\"_checklist-action-card__content_\"] > span",""],
+    ["Action Card","操作卡片","^/app/onboarding/list/?$","attr:aria-label","[class*=\"_action-card_\"]:has([class*=\"_checklist-action-card__content_\"]) button[class*=\"_action-card__action_\"]",""],
+    ["Product experts","产品专家","^/app/onboarding/list/?$","attr:alt","img[class*=\"_checklist-action-card__image_\"]",""],
+    ["Email","邮件","^/app/settings/forms/offline/?$","text","[class*=\"_offline-form_\"] [class*=\"_form-text-block_\"][class*=\"_accordion--open_\"] > button[class*=\"_accordion__trigger_\"][aria-expanded=true] [class*=\"_form-text-block__title_\"]",""],
+  ];
   const COMMON_EXACT = [
+    ["You have full access to all features and settings, including billing and subscriptions.","你拥有所有功能和设置的完整权限，包括账单和订阅。"],
+    ["Make someone else the owner of the organization.","将组织所有者转给其他人。"],
+    ["You signed in with Google, Microsoft, Apple or custom SSO.","你使用 Google、Microsoft、Apple 或自定义 SSO 登录。"],
+    ["To keep your account secure, make sure you have enabled 2FA on your providers account.","为保障账号安全，请确认已在你的登录服务商处启用双重身份验证。"],
+    ["Choose whether ticket rules can automatically assign tickets to this teammate.","选择工单规则是否可以自动把工单分配给此成员。"],
+    ["Get emails about tickets assigned to you or your teams.","接收分配给你或你所在团队的工单邮件。"],
+    ["Signature is automatically added at the bottom of every ticket reply.","签名会自动添加到每条工单回复的末尾。"],
+    ["Ticketing","工单"],
+    ["Hide details","隐藏详情"],
+    ["Show details","显示详情"],
+    ["Search ticketing teams","搜索工单团队"],
+    ["New ticket update","工单有新更新"],
+    ["New ticket or message","新工单或新消息"],
+    ["New team assigned","分配了新团队"],
+    ["Team assigned to ticket","工单被分配给团队"],
+    ["Manage team","管理团队"],
+    ["Delete","删除"],
+    ["Close","关闭"],
+    ["Back","返回"],
+    ["Active","已启用"],
+    ["Rating question","评分问题"],
+    ["Confirmation message","确认消息"],
+    ["Required","必填"],
+    ["Delete element","删除元素"],
+    ["Add element","添加元素"],
+    ["About chat routing rules","关于聊天路由规则"],
+    ["Route Messenger chats to the right team","将 Messenger 聊天分配给合适的团队"],
+    ["Connect Messenger to bring messages from your Facebook page into your inbox.","连接 Messenger，把 Facebook 主页的消息接入收件箱。"],
+    ["Route SMS messages to the right team","将短信分配给合适的团队"],
+    ["Connect Twilio to handle SMS from your inbox.","连接 Twilio，在收件箱中处理短信。"],
+    ["Route WhatsApp chats to the right team","将 WhatsApp 聊天分配给合适的团队"],
+    ["Connect WhatsApp to answer customer messages from one inbox.","连接 WhatsApp，在同一个收件箱中回复客户消息。"],
+    ["Route Instagram chats to the right team","将 Instagram 聊天分配给合适的团队"],
+    ["Connect Instagram to catch every DM in your inbox.","连接 Instagram，在收件箱中接收每一条私信。"],
+    ["Invite options","邀请选项"],
+    ["If no teammate replies to a new chat,","如果没有成员回复新聊天，"],
+    ["transfer to another teammate","转给其他成员"],
+    ["close chat","关闭聊天"],
+    ["mark chat as inactive","将聊天标记为未活跃"],
+    ["minutes","分钟"],
+    ["If no new messages are sent,","如果没有新消息，"],
+    ["Enter field name","输入字段名称"],
+    ["Select field type","选择字段类型"],
+    ["Saved to profile as","保存到资料的字段"],
+    ["Minutes before the message is sent","发送消息前等待的分钟数"],
+    ["Message text","消息内容"],
+    ["Customer can leave email","客户可以留下邮箱"],
+    ["No trusted domains yet","还没有可信域名"],
+    ["Add a domain above, or pick one from the domains detected on your websites.","在上方添加域名，或从网站检测到的域名中选择。"],
+    ["View detected domains","查看已检测到的域名"],
+    ["Email addresses and domains added to your trusted list won't be treated as spam.","加入可信列表的邮箱地址和域名不会被视为垃圾邮件。"],
+    ["No trusted emails found. Add some using the form above.","未找到可信邮箱。请使用上方表单添加。"],
+    ["Email addresses and domains added to your blocked list will be treated as spam.","加入屏蔽列表的邮箱地址和域名将被视为垃圾邮件。"],
+    ["No blocked emails found. Add some using the form above.","未找到已屏蔽的邮箱。请使用上方表单添加。"],
+    ["trusted","可信列表"],
+    ["blocked","屏蔽列表"],
+    ["Send data to your tools automatically","自动把数据发送到你的工具"],
+    ["Set up webhooks to send real-time updates to your systems when selected actions happen in Text.","设置 Webhook，在 Text 中发生所选操作时，向你的系统实时发送更新。"],
+    ["Create webhook","创建 Webhook"],
+    ["Open details","打开详情"],
+    ["To:","收件人："],
+    ["Enter message","输入消息"],
+    ["Manage followers","管理关注者"],
+    ["Assign to","分配给"],
+    ["Add to VIP","加入 VIP"],
+    ["Block this address","屏蔽此地址"],
+    ["Move to","移至"],
+    ["Edit view","编辑视图"],
+    ["Delete view","删除视图"],
+    ["Choose custom date range","选择自定义日期范围"],
+    ["filter options","筛选选项"],
+    ["Clear date range","清除日期范围"],
+    ["Previous year","上一年"],
+    ["Previous month","上一月"],
+    ["Next month","下一月"],
+    ["Next year","下一年"],
+    ["Compare to","对比对象"],
+    ["Open link","打开链接"],
+    ["Copy text","复制文本"],
+    ["Campaign","活动"],
+    ["Identify your best leads and their conversion by adding customer fields.","添加客户字段，找出最优质的线索及其转化情况。"],
+    ["Select currency for the report.","选择报表使用的币种。"],
+    ["Available currencies are based on the orders from the selected period of time.","可选币种取决于所选时段内的订单。"],
+    ["Activate your AI Agent","启用 AI 客服"],
+    ["Activate your AI Agent complete","启用 AI 客服，已完成"],
+    ["Train on your website or files","用网站或文件训练"],
+    ["Train on your website or files complete","用网站或文件训练，已完成"],
+    ["Connect your channels","连接你的渠道"],
+    ["Let your AI Agent handle chats first, or use it as backup when your team is busy or unavailable.","让 AI 客服优先处理聊天，或在团队繁忙、不在线时作为后备。"],
+    ["View profile","查看资料"],
+    ["Add sources that teach your AI Agent to answer your way.","添加知识来源，让 AI 客服按你的方式回答。"],
+    ["Add custom skills and your AI Agent resolves more chats on its own.","添加自定义技能，AI 客服就能自行解决更多聊天。"],
+    ["When one appears, teach your AI Agent once and it'll handle similar question automatically.","出现后，只需教 AI 客服一次，它就会自动处理类似问题。"],
+    ["Update source","更新来源"],
+    ["Welcome to Playbook","欢迎使用自动化手册"],
+    ["Play with the sentence. Click any part to make it yours.","试着改写这句话。点击任意部分，改成你的内容。"],
+    ["Try this skill","试用此技能"],
+    ["Filter templates by category","按类别筛选模板"],
+    ["Choose theme","选择主题"],
+    ["Search commands","搜索命令"],
+    ["Close command palette","关闭命令面板"],
+    ["Go to","前往"],
+    ["AI Agent active chats","AI 客服进行中的聊天"],
+    ["AI Agent profile","AI 客服资料"],
+    ["AI Agent reports","AI 客服报表"],
+    ["AI agent preview","AI 客服预览"],
+    ["Accepting chats:","接收聊天："],
+    ["After chat","聊天结束后"],
+    ["During chat","聊天期间"],
+    ["Agent type","客服类型"],
+    ["All languages","所有语言"],
+    ["Answering chats","回复聊天中"],
+    ["Auto tag","自动标签"],
+    ["Auto-assign tickets","自动分配工单"],
+    ["Auto-assign:","自动分配："],
+    ["Automation level","自动化程度"],
+    ["Bulleted list","项目符号列表"],
+    ["Numbered list","编号列表"],
+    ["Multiple choice list","多选列表"],
+    ["Single choice list","单选列表"],
+    ["Short answer","简答"],
+    ["Campaign filters","活动筛选"],
+    ["Multiple campaigns settings","多个活动设置"],
+    ["Chat assignment","聊天分配"],
+    ["Chat list","聊天列表"],
+    ["Chat rating","聊天评分"],
+    ["Not rated","未评分"],
+    ["Chat availability follows working hours. Time zones match each teammate's location.","聊天可用性遵循工作时间，时区与各成员所在地一致。"],
+    ["Chats are assigned automatically","聊天自动分配"],
+    ["Teammates pick chats manually","成员手动选择聊天"],
+    ["Collect customer feedback after a chat ends.","聊天结束后收集客户反馈。"],
+    ["Leaving a comment is always optional","留言始终是可选的"],
+    ["Command options","命令选项"],
+    ["Command palette trigger","命令面板入口"],
+    ["Current agent avatar","当前客服头像"],
+    ["Customer story","客户案例"],
+    ["Date range picker","日期范围选择器"],
+    ["Date range presets","日期范围预设"],
+    ["Details panel","详情面板"],
+    ["Editor mode menu","编辑器模式菜单"],
+    ["Loading canned responses","正在加载快捷回复"],
+    ["Loading form","正在加载表单"],
+    ["Loading form type","正在加载表单类型"],
+    ["Loading page","正在加载页面"],
+    ["Loading skills","正在加载技能"],
+    ["Loading tags","正在加载标签"],
+    ["Message box toolbar","消息框工具栏"],
+    ["My recent chats list","最近聊天列表"],
+    ["No detected domains","没有检测到域名"],
+    ["Not detected","未检测到"],
+    ["No gaps so far.","暂无知识缺口。"],
+    ["No phone number","无电话号码"],
+    ["No qualified leads yet","暂无合格线索"],
+    ["Other recipients","其他收件人"],
+    ["Phone call","电话"],
+    ["Profile menu","个人菜单"],
+    ["Reply status","回复状态"],
+    ["Resize panel","调整面板大小"],
+    ["See tagged chats","查看带标签的聊天"],
+    ["See tagged tickets","查看带标签的工单"],
+    ["Skills starter pack","技能入门包"],
+    ["Sold list","已成交列表"],
+    ["Solved list","已解决列表"],
+    ["Tag action menu","标签操作菜单"],
+    ["Ticket info","工单信息"],
+    ["Ticket priority","工单优先级"],
+    ["Ticket responses","工单回复"],
+    ["Ticket skills","工单技能"],
+    ["Ticket tags","工单标签"],
+    ["Up/down","上/下"],
+    ["Blocked | Spam Protection | Security | Settings | Text App","已屏蔽｜垃圾邮件防护｜安全｜设置｜Text App"],
+    ["Trusted | Spam Protection | Security | Settings | Text App","可信｜垃圾邮件防护｜安全｜设置｜Text App"],
+    ["Chat | Canned Responses | Settings | Text App","聊天｜快捷回复｜设置｜Text App"],
+    ["Ticket | Canned Responses | Settings | Text App","工单｜快捷回复｜设置｜Text App"],
+    ["Ticket | Tags | Settings | Text App","工单｜标签｜设置｜Text App"],
+    ["Email Templates | Ticketing settings | Text App","邮件模板｜工单设置｜Text App"],
+    ["Payment Details | Billing | Admin | Text App","付款信息｜账单｜管理｜Text App"],
+    ["Ticket Rules | Settings | Text App","工单规则｜设置｜Text App"],
+    ["Templates | Playbook | Text App","模板｜自动化手册｜Text App"],
     ["Customers can't contact you on your website.","客户无法通过你的网站联系你。"],
     ["Connect website widget","连接网站组件"],
     ["Close alert","关闭提示"],
@@ -104,8 +679,25 @@
     ["Log out","退出登录"],
     ["AI resolutions","AI 解决次数"],
     ["AI resolutions usage","AI 解决次数用量"],
+    ["Sales closed","成交额"],
+    ["Days left","天后到期"],
   ];
-  const COMMON_RULES = [["{n} Days left","剩余 {n} 天","a[class*=\"_subscription-counter_\"]"]];
+  const COMMON_RULES = [["{n} Days left","剩余 {n} 天","a[class*=\"_subscription-counter_\"]"],
+    ["Recommended: {n} chats for new teammates.","建议新成员设为 {n} 个聊天。"],
+    ["Go live (2/{n})","上线（2/{n}）"],
+    ["We haven't detected any new domains hosting your chat widget. New domains can take up to {n} minutes to appear here.","尚未检测到托管聊天组件的新域名。新域名最多需要 {n} 分钟才会显示在这里。"],
+    ["Select min. {n} person","至少选择 {n} 人"],
+    ["“We’re resolving over {n}% of customer queries without human intervention, while maintaining strong customer satisfaction.”","“我们无需人工介入就解决了超过 {n}% 的客户咨询，同时保持了很高的客户满意度。”"],
+    ["Most teams hit {n}% resolution rates from their website alone.","多数团队仅靠网站渠道就能达到 {n}% 的解决率。"],
+    ["All ({n})","全部（{n}）"],
+    ["Articles ({n})","文章（{n}）"],
+    ["Chat responses ({n})","聊天回复（{n}）"],
+    ["FAQ ({n})","常见问题（{n}）"],
+    ["Files ({n})","文件（{n}）"],
+    ["Team members ({n})","团队成员（{n}）"],
+    ["Websites ({n})","网站（{n}）"],
+    ["Last {n} days","最近 {n} 天"],
+    ["{n} in use","{n} 个使用中"]];
   const SCOPES = [
     // I inbox：/app/inbox 及其子路径。
     { id: "I", slug: "inbox", path: /^\/app\/inbox(?:\/|$)/,
@@ -214,6 +806,9 @@
         ["Attachments","附件"],
         ["Archive list","归档列表"],
         ["Chat list header","聊天列表标题"],
+        ["Show options","显示选项"],
+        ["More actions","更多操作"],
+        ["Ticket ID","工单编号"],
       ],
       rules: [],
       overrides: [],
@@ -341,6 +936,8 @@
         ["Accepting chats","接收聊天中"],
         ["Name","名称"],
         ["Added by","添加者"],
+        ["Teams and Teammates have moved to","团队和成员已移至"],
+        ["Settings.","设置中。"],
       ],
       rules: [],
       overrides: [],
@@ -627,8 +1224,18 @@
         ["Save view","保存视图"],
         ["(Last 7 days)","（过去 7 天）"],
         ["Teammate performance (tickets)","成员表现（工单）"],
+        ["Chats by status","按状态统计聊天"],
+        ["% of all chats","占全部聊天的比例"],
+        ["Chats duration","聊天时长"],
+        ["Chats per hour","每小时聊天数"],
+        ["Accepting","接收中"],
+        ["Not accepting","不接收"],
+        ["Logged in","已登录"],
+        ["Average chat duration","平均聊天时长"],
+        ["Average","平均"],
+        ["Date is:","日期："],
       ],
-      rules: [["{n} days","{n} 天","[class*=\"_date-filter-container_\"]"],["vs {n} for previous period","上一时段：{n}","[class*=\"_metric-basic-info__compare_\"]","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"],["vs {n} on avg. for previous period","上一时段平均：{n}","[class*=\"_metric-basic-info__compare_\"]","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"],["{n} of {n} visitors","{n} / {n} 位访客","[class*=\"_summary-card__counts_\"]","\\d+(?:[,.]\\d+)*"],["{n} of {n} campaigns","{n} / {n} 个活动","[class*=\"_summary-card__counts_\"]","\\d+(?:[,.]\\d+)*"],["{n} of {n} chats","{n} / {n} 次聊天","[class*=\"_summary-card__counts_\"]","\\d+(?:[,.]\\d+)*"]],
+      rules: [["All reports are displayed in the selected timezone ({n}).","所有报表均按所选时区（{n}）显示。","[class*=\"_report-generated-at_\"]","UTC[+−-]\\d{1,2}:\\d{2}"],["{n} vs {n}","{n} 对比 {n}","[class*=\"_left-node__date-range_\"]","\\d{1,2}(?:[–-]\\d{1,2})? (?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?: \\d{4})?"],["All reports are displayed in your selected timezone (","所有报表均按所选时区（","[class*=\"_dashboard-overview-generated-at_\"]"],["). You can change the timezone from the filters in other reports.","）显示。可在其他报表的筛选条件中更改时区。","[class*=\"_dashboard-overview-generated-at_\"]"],["at","，","[class*=\"_dashboard-overview-generated-at_\"]"],["{n} days","{n} 天","[class*=\"_date-filter-container_\"]"],["vs {n} for previous period","上一时段：{n}","[class*=\"_metric-basic-info__compare_\"]","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"],["vs {n} on avg. for previous period","上一时段平均：{n}","[class*=\"_metric-basic-info__compare_\"]","\\d+(?:[.,]\\d+)*(?:%|[dhms])?"],["{n} of {n} visitors","{n} / {n} 位访客","[class*=\"_summary-card__counts_\"]","\\d+(?:[,.]\\d+)*"],["{n} of {n} campaigns","{n} / {n} 个活动","[class*=\"_summary-card__counts_\"]","\\d+(?:[,.]\\d+)*"],["{n} of {n} chats","{n} / {n} 次聊天","[class*=\"_summary-card__counts_\"]","\\d+(?:[,.]\\d+)*"]],
       overrides: [],
       fragments: [{ path: /^\/app\/reports\/exports\/scheduled\/?$/, selector: "[class*=\"_empty-state__description_\"]", source: "Get reports emailed to selected teammates on a regular basis.", parts: ["Get reports emailed to selected teammates","on a regular basis."], target: ["通过邮件向指定成员","定期发送报表。"] }],
     },
@@ -1002,10 +1609,26 @@
         ["Access Text outside the app","在应用外访问 Text"],
         ["Create a personal access token to access and manage Text from your integrations.","创建个人访问令牌，以便从你的集成访问和管理 Text。"],
         ["Create token","创建令牌"],
+        ["Chat with visitors in real time while they browse your website.","访客浏览网站时，可与他们实时聊天。"],
+        ["Connect using WordPress, Shopify, GTM, or a code snippet.","可通过 WordPress、Shopify、GTM 或代码片段连接。"],
+        ["Website widget preview","网站组件预览"],
+        ["Ready to use","可直接使用"],
+        ["Get link","获取链接"],
+        ["Coming soon","即将推出"],
+        ["Get notified","接收通知"],
+        ["Need help setting up integrations?","需要协助配置集成吗？"],
+        ["Work with a verified partner who can connect your tools and handle the setup for you.","与认证合作伙伴合作，由他们连接你的工具并完成配置。"],
+        ["Find a partner","寻找合作伙伴"],
+        ["Integrations promo banner","集成服务横幅"],
+        ["Tabs","页签"],
+        ["Add to","添加至"],
+        ["Address name","地址名称"],
+        ["Tip:","提示："],
+        ["None of your agents are accepting chats and your AI Agent is off.","当前没有成员接收聊天，AI 客服也未开启。"],
       ],
-      rules: [["Chat tags ({n})","聊天标签（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Ticket tags ({n})","工单标签（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Chat responses ({n})","聊天快捷回复（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Ticket responses ({n})","工单快捷回复（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Free trial ends in {n} days.","免费试用将在 {n} 天后结束。","[class*=\"_subscription-overview_\"] [class*=\"_alert__text-wrapper_\"]"]],
+      rules: [["({n}% used)","（已用 {n}%）","[class*=\"_subscription-overview_\"] [class*=\"_usage-bar_\"]","\\d+(?:[.,]\\d+)*"],["{n}/user/mo · starts on {n}","{n}/位用户/月 · 自 {n} 起","[class*=\"_subscription-overview_\"] [class*=\"_section-header__text_\"]","(?:[$€£¥]\\d+(?:[.,]\\d+)*|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?) \\d{1,2}, \\d{4})"],["Chat tags ({n})","聊天标签（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Ticket tags ({n})","工单标签（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Chat responses ({n})","聊天快捷回复（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Ticket responses ({n})","工单快捷回复（{n}）","[role=tab] [class*=\"_tab__label_\"]"],["Free trial ends in {n} days.","免费试用将在 {n} 天后结束。","[class*=\"_subscription-overview_\"] [class*=\"_alert__text-wrapper_\"]"]],
       overrides: [["General","通用"]],
-      fragments: [{ path: /^\/app\/settings\/billing\/subscription\/?$/, selector: "[class*=\"_external-choose-plan-tile__feature-header_\"]", source: "Everything in Essential, plus:", parts: ["Everything in","Essential,","plus:"], target: ["包含","基础版的全部功能，","另有："] }, { path: /^\/app\/settings\/chats\/chat-transcripts\/?$/, selector: "[class*=\"_chat-transcripts-fields__label_\"]", source: "Send chat transcripts after each chat to up to 5 email addresses.", parts: ["Send chat transcripts after each chat to up to","5","email addresses."], target: ["每次聊天结束后，最多可将聊天记录发送至","5","个电子邮件地址。"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow teammates to share files", parts: ["Allow","teammates","to share files"], target: ["允许","成员","分享文件"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow customers to share files", parts: ["Allow","customers","to share files"], target: ["允许","客户","分享文件"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no teammate replies to a new chat, transfer to another teammate after minutes", parts: ["If no teammate replies to a new chat,","transfer to another teammate","after","minutes"], target: ["如果没有成员回复新聊天，","转接给另一位成员","前等待","分钟"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no new messages are sent, mark chat as inactive after minutes", parts: ["If no new messages are sent,","mark chat as inactive","after","minutes"], target: ["如果没有新消息，","标记聊天为不活跃","前等待","分钟"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no new messages are sent, close chat after minutes", parts: ["If no new messages are sent,","close chat","after","minutes"], target: ["如果没有新消息，","关闭聊天","前等待","分钟"] }, { path: /^\/app\/settings\/customers\/customer-fields\/?$/, selector: "[class*=\"_customer-custom-fields-empty-state__content_\"] [class*=\"_empty-state__description_\"]", source: "Customer fields collect the details that matter about your customers. Qualification fields decide which leads show up in Qualified leads. Customer context fields keep useful details for your team.", parts: ["Customer fields collect the details that matter about your customers.","Qualification","fields decide which leads show up in Qualified leads.","Customer context","fields keep useful details for your team."], target: ["客户字段用于收集重要的客户信息。","线索资格","字段决定哪些线索会显示在“合格线索”中。","客户信息","字段为团队保留有用的客户资料。"] }],
+      fragments: [{ path: /^\/app\/settings\/billing\/subscription\/?$/, selector: "[class*=\"_external-choose-plan-tile__feature-header_\"]", source: "Everything in Essential, plus:", parts: ["Everything in","Essential,","plus:"], target: ["包含","基础版的全部功能，","另有："] }, { path: /^\/app\/settings\/chats\/chat-transcripts\/?$/, selector: "[class*=\"_chat-transcripts-fields__label_\"]", source: "Send chat transcripts after each chat to up to 5 email addresses.", parts: ["Send chat transcripts after each chat to up to","5","email addresses."], target: ["每次聊天结束后，最多可将聊天记录发送至","5","个电子邮件地址。"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow teammates to share files", parts: ["Allow","teammates","to share files"], target: ["允许","成员","分享文件"] }, { path: /^\/app\/settings\/security\/file-sharing\/?$/, selector: "[class*=\"_file-sharing__checkbox_\"] [class*=\"_checkbox__text_\"]", source: "Allow customers to share files", parts: ["Allow","customers","to share files"], target: ["允许","客户","分享文件"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no teammate replies to a new chat, transfer to another teammate after minutes", parts: ["If no teammate replies to a new chat,","transfer to another teammate","after","minutes"], target: ["新聊天无人回复：","转给其他成员","前等待","分钟"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no new messages are sent, mark chat as inactive after minutes", parts: ["If no new messages are sent,","mark chat as inactive","after","minutes"], target: ["无新消息：","标为不活跃","前等待","分钟"] }, { path: /^\/app\/settings\/chats\/chat-timeout\/?$/, selector: "[class*=\"_timeout-settings_\"]:has(> [class*=\"_timeout-settings__input_\"])", source: "If no new messages are sent, close chat after minutes", parts: ["If no new messages are sent,","close chat","after","minutes"], target: ["无新消息：","关闭聊天","前等待","分钟"] }, { path: /^\/app\/settings\/customers\/customer-fields\/?$/, selector: "[class*=\"_customer-custom-fields-empty-state__content_\"] [class*=\"_empty-state__description_\"]", source: "Customer fields collect the details that matter about your customers. Qualification fields decide which leads show up in Qualified leads. Customer context fields keep useful details for your team.", parts: ["Customer fields collect the details that matter about your customers.","Qualification","fields decide which leads show up in Qualified leads.","Customer context","fields keep useful details for your team."], target: ["客户字段用于收集重要的客户信息。","线索资格","字段决定哪些线索会显示在“合格线索”中。","客户信息","字段为团队保留有用的客户资料。"] }],
     },
     // O onboarding：/app/onboarding 及其子路径。
     { id: "O", slug: "onboarding", path: /^\/app\/onboarding(?:\/|$)/,
@@ -1040,6 +1663,8 @@
     '[class*="_customer-profile"],[class*="_customer-details"],[class*="_recipient"],[class*="_canned-response-item"]',
     '[class*="_campaign-card"],[class*="_campaign-list-item"],[class*="_source-name"],[class*="_tag-name"]',
     '[class*="_teammate-name"],[class*="_team-name"],[class*="_agent-name"],[class*="_assigned-teammate-label"]',
+    '[class*="_single-agent-field__name_"],[class*="_agent-identity__name_"],[class*="_team-member__name_"]',
+    '[class*="_company-owner__fullname_"],[class*="_company-owner__data_"] :is(h1,h2,h3)',
     '[class*="_token-value"],[class*="_secret"],[class*="_signature"],[class*="_preview"],[class*="_chat-preview-grid__preview"]',
   ].join(',');
   const APP = /^\/app(?:\/|$)/;
@@ -1055,12 +1680,23 @@
     '[class*="_install-code-reminder-modal_"] :is([class*="_modal__introduction-heading_"],[class*="_modal__introduction-body_"])',
   ].join(',');
   const MAIN = '[class*="_app-frame-content__page-content-container__content-wrapper__content_"]';
+  const CUSTOM_FORMS = /^\/app\/settings\/custom-forms\/?$/;
+  const PRESET_ROW = '[class*="_custom-forms-settings_"] tr';
+  const PRESET_NAME = 'td[data-column$="_name"] [class*="_custom-forms-list__name-text_"] div[class*="_text_"]';
+  const PRESET_AUTHOR = 'td[data-column$="_createdBy"] [class*="_custom-form-author-cell_"]';
+  const PRESET_NAMES = new Map([
+    ['Ask for contact details', '询问联系方式'],
+    ['Ask for email', '询问邮箱'],
+    ['Ask for phone', '询问电话号码'],
+  ]);
+  const FORM_EDITOR = /^\/app\/settings\/forms\/(?:pre-chat|post-chat|no-response|offline)\/?$/;
+  const FORM_TITLES = '[class*="_form-field-element__title_"],[class*="_form-text-block__title_"]';
   const REPORT_COPY = [
     '[class*="_metric-basic-info__title-box__title_"],[class*="_metric-basic-info__details_"]',
     '[class*="_metric-basic-info__details-text_"],[class*="_metric-basic-info__compare_"],[class*="_breakdown-box__title_"],[class*="_metric-cta_"]',
     '[class*="_summary-card_"],[class*="_chart-card-title_"],[class*="_recommended-actions__body_"]',
     '[class*="_promo-banner__content_"],[class*="_mobile-promo-banner__store-link_"],[class*="_report-generated-at_"]',
-    '[class*="_filterButton__content__label_"],[class*="_column-label_"],[class*="_target-label_"]',
+    '[class*="_filterButton__content__label_"],[class*="_column-label_"],[class*="_target-label_"],[class*="_left-node__date-range_"]',
     '[class*="_donut-chart-container__value_"],[class*="_top-topics-heading_"]',
     '[class*="_subtitle-trigger_"],[class*="_campaign-conversion-breakdown__actions_"] a',
   ].join(',');
@@ -1117,11 +1753,49 @@
       return { pattern: new RegExp('^' + pattern + '$', 'u'), target, within };
     });
   }
+  const moduleExact = new Map();
+  const moduleTemplates = [];
+  for (const [source, target, route, kind, selector, quantity] of MODULE_FIXES) {
+    const entry = { path: new RegExp(route), kind, selector, target };
+    if (quantity) {
+      entry.pattern = compileRules([[source, target, selector, quantity]])[0].pattern;
+      moduleTemplates.push(entry);
+    } else {
+      if (!moduleExact.has(source)) moduleExact.set(source, []);
+      moduleExact.get(source).push(entry);
+    }
+  }
+  function moduleLookup(raw, el, kind) {
+    const key = norm(raw);
+    if (!key || !scope || !/[A-Za-z]/.test(key)) return null;
+    const exact = moduleExact.get(key);
+    if (!exact && !/[0-9]/.test(key)) return null;
+    if (blocked(el) || !el.closest(MAIN) || el.closest('table tbody,[role=rowgroup] [role=cell],[role=menu],[role=listbox]')) return null;
+    const within = entry => entry.kind === kind && entry.path.test(path) && el.matches(entry.selector);
+    const found = exact?.find(within);
+    if (found) return edges(raw, found.target);
+    for (const entry of moduleTemplates) {
+      if (!within(entry)) continue;
+      const match = entry.pattern.exec(key);
+      if (match) { let i = 1; return edges(raw, entry.target.replace(/\{n\}/g, () => match[i++])); }
+    }
+    return null;
+  }
   const common = new Map(COMMON_EXACT);
   const commonRules = compileRules(COMMON_RULES);
   const scopes = SCOPES.map(scope => ({
     ...scope, exact: new Map(scope.exact), overrides: new Map(scope.overrides), rules: compileRules(scope.rules),
   }));
+  // 其他分区的精确词条作为后备：只收各分区译法一致的词条，译法冲突的词留给各自分区。
+  const shared = new Map();
+  {
+    const seen = new Map();
+    for (const item of scopes) for (const [key, value] of item.exact) {
+      if (!seen.has(key)) seen.set(key, new Set());
+      seen.get(key).add(value);
+    }
+    for (const [key, values] of seen) if (values.size === 1 && !common.has(key)) shared.set(key, [...values][0]);
+  }
   const textMemory = new WeakMap();
   const attrMemory = new WeakMap();
   const missed = new Set();
@@ -1134,6 +1808,7 @@
 
   function blocked(el) {
     if (!el || el.closest(BLOCK)) return true;
+    if (scope?.id === 'A' && el.closest('h1')) return true;
     const card = el.closest(SKILL_CARD);
     if (card) {
       const heading = card.closest('[class*="_skills__section_"]')?.querySelector(':scope > [class*="_skills__section-title_"]');
@@ -1182,7 +1857,7 @@
     return controlLabel(labelled?.matches(TICKET_FILTER_TRIGGER) ? labelled.querySelector(':scope > button[aria-label]') : labelled);
   }
 
-  const translationFor = key => scope?.overrides.get(key) ?? scope?.exact.get(key) ?? common.get(key);
+  const translationFor = key => scope?.overrides.get(key) ?? scope?.exact.get(key) ?? common.get(key) ?? shared.get(key);
 
   function pickerAllows(listbox, key) {
     if (scope?.id === 'I' && /^\/app\/inbox\/tickets\/grid\//.test(path)) {
@@ -1234,6 +1909,7 @@
     if (el.closest(PICKER)) return !!el.closest(PICKER_LABEL);
     if (BILLING_PATH.test(path) && el.closest(BILLING_PLANS)) return true;
     if (attr === 'aria-label' && el.matches('a[class*="_subscription-counter_"]')) return true;
+    if (!attr && el.closest('a[class*="_subscription-counter_"],div[class*="_counter_"][role=button] [class*="_counter__label_"]')) return true;
     if (attr === 'aria-label' && el.matches('[role=search][class*="_search-input_"]')) return true;
     if (el.matches('[class*="_search__text--full_"]') && el.closest('[class*="_search__container_"]')) return true;
     if (attr === 'aria-label' && el.matches('[class*="_counter_"][role=button]') &&
@@ -1244,50 +1920,27 @@
           /\/channel-promo\//.test(path) && el.parentElement?.matches(MAIN)))) return true;
     if (scope?.id === 'C' && attr === 'aria-label' && el.matches('[class*="_campaigns-filters__left_"]')) return true;
     if (scope?.id === 'A' && (
-      el.closest('[class*="_teams-moved-banner__link_"],[class*="_setup-tiles_"] [class*="_tile_"]') ||
+      el.closest('[class*="_teams-moved-banner__body_"],[class*="_teams-moved-banner__link_"],[class*="_setup-tiles_"] [class*="_tile_"]') ||
       (attr === 'aria-label' && el.matches('a[class*="_agent-identity_"]')) ||
       (/\/profile\/?$/.test(path) && el.closest('[class*="_simple-picker_"][role=button],[class*="_language-block_"][role=button],' +
         '[class*="_state-preview__content_"] > span:first-child'))
     )) return true;
     if (el.closest('[role=menu]')) return true; // 仅在已识别的静态菜单里匹配下方词条。
+    if (scope?.id === 'S' && /\/chat-availability\/?$/.test(path) && el.closest('[class*="_availability__info-tooltip_"]')) return true;
+    if (scope?.id === 'R' && el.closest('[class*="_date-filter-range-wrapper_"]')) return true;
     if (el.closest(HEADER)) {
       return !CUSTOM_VIEW.test(path) && !el.closest('[class*="_ticket-feed_"],[class*="_chat-feed_"]');
     }
     if (el.closest(UI_PANEL) || el.closest(CONTROL) || el.closest(SKILL_CARD)) return true;
-    if (!scope || !el.closest(MAIN)) return false;
-    if (scope.id === 'S' && (
-      (/\/notifications\/?$/.test(path) && el.closest('[class*="_switch-item__label_"],[class*="_notifications-settings__footer_"] a')) ||
-      (/\/company-details\/?$/.test(path) && el.closest('[class*="_tag__content_"]')) ||
-      (/\/desktop-app\/?$/.test(path) && el.closest('[class*="_promo__header-copy_"]')) ||
-      (/\/websites\/?$/.test(path) && el.closest('[class*="_websites-settings-empty-state__main_"]')) ||
-      (/\/whatsapp\/?$/.test(path) && el.closest('[class*="_whatsapp-header__right-node_"] a')) ||
-      (/\/chat-page\/?$/.test(path) && el.closest('[class*="_content-header__right-node_"] a')) ||
-      (/\/routing\/chat-routing\//.test(path) && el.closest('[class*="_route-fallback__label-row_"]')) ||
-      (/\/chat-availability\/?$/.test(path) && el.closest('[class*="_messaging-mode-selector__label_"],[class*="_availability__info-icon_"]')) ||
-      (/\/chats\/chat-timeout\/?$/.test(path) && el.closest(CHAT_TIMEOUT)) ||
-      (/\/chats\/ai-summary\/?$/.test(path) && el.closest('[class*="_summary-language_"]')) ||
-      (/\/customers\/customer-fields\/?$/.test(path) && el.closest('[class*="_category-preview_"] [class*="_details-card__label__content_"]')) ||
-      (/\/integrations\/api-usage\/?$/.test(path) && attr === 'aria-label' &&
-        el.matches('[class*="_api-usage-empty-state__cards_"] a[class*="_action-card_"]')) ||
-      (/\/integrations\/api-access(?:\/|$)/.test(path) && el.closest('[class*="_integration-tools-header_"]')) ||
-      (/\/integrations\/api-access\/apis-sdks\/?$/.test(path) && el.closest('[class*="_apis-sdks_"]'))
-    )) return true;
-    if (scope.id === 'R' && (el.closest(REPORT_COPY) ||
-        (/\/customers\/leads-conversion\/?$/.test(path) && el.closest('[class*="_setup-prompt_"],[class*="_sources-row_"]')) ||
-        el.matches('[class*="_send-report-export-container_"] form > div > div > div > span') ||
-        (attr && el.matches('[class*="_overview-section_"],[class*="_sortable-item__draggable_"],[class*="_filterButton_"],' +
-          '[class*="_range-date-picker__custom-trigger_"],[role=tablist][class*="_tabs__list_"]')) ||
-        (attr === 'alt' && el.closest('[class*="_promo-banner__additional-content_"]')) ||
-        el.closest('a[href*="/app/reports/engagement/campaign-conversion"]'))) return true;
-    if (/^\/app\/settings\/teammates\/me\/edit(?:\/|$)/.test(path) && el.matches('h5')) return true;
-    const copy = scope.id === 'R' || scope.id === 'O' || SAFE_SETTINGS_COPY.test(path) ||
-      (scope.id === 'A' && /\/(?:launch-guide|overview)\/?$/.test(path));
-    return copy && !!el.closest('p,h1,h2,h3,h4,h5,h6,[class*="_description_"],[class*="_help-text"]');
+    if (el.closest('[class*="_ticket-info__details-metadata_"]')) return !!el.closest('[class*="_details-card-info__label_"]');
+    return true; // 其余位置只靠精确词典匹配；用户数据靠 BLOCK 和 lookup 里的专项排除保护。
   }
 
   function lookup(raw, el) {
     const key = norm(raw);
     if (!/[A-Za-z]/.test(key)) return null;
+    // 表单折叠标题可能来自用户设置。仅分区规则允许翻译已识别的固定标签。
+    if (FORM_EDITOR.test(path) && el.closest(FORM_TITLES)) return null;
     if (scope?.id === 'S' && BILLING_PLAN_NAMES.has(key) && !(BILLING_PATH.test(path) && el.closest(BILLING_PLANS))) return null;
     if (el.closest('[class*="_modal__heading_"]') &&
         !['Create new chat tag', 'Add widget to your website', 'Invite teammates'].includes(key) &&
@@ -1326,18 +1979,39 @@
     node.nodeValue = output;
   }
 
+  function translatePresetName(row) {
+    const label = row.querySelector(PRESET_NAME);
+    const node = label?.firstChild;
+    if (!node || node.nodeType !== Node.TEXT_NODE || label.childNodes.length !== 1 || label.closest(EDITABLE)) return;
+
+    const author = row.querySelector(PRESET_AUTHOR);
+    const systemIcon = author?.querySelector(':scope > span:first-child > svg[role="img"][viewBox="0 0 80 80"] > path');
+    const systemAuthor = systemIcon && author.lastElementChild?.matches('span') &&
+      norm(author.lastElementChild.textContent) === 'Text';
+    if (!systemAuthor) {
+      const previous = textMemory.get(node);
+      if (previous && node.nodeValue === previous.output) writeText(node, previous.source, previous.source);
+      return;
+    }
+
+    const source = sourceOf(node);
+    const target = PRESET_NAMES.get(norm(source));
+    if (target) writeText(node, source, edges(source, target));
+  }
+
   function translateText(node) {
     const el = node.parentElement;
     const before = textMemory.get(node);
-    if (!ui(el)) {
+    const source = sourceOf(node);
+    const extra = moduleLookup(source, el, 'text');
+    if (!extra && !ui(el)) {
       if (before && el && !el.closest(EDITABLE) && node.nodeValue === before.output) {
         writeText(node, before.source, before.source);
       }
       return;
     }
     if (before?.fragment && node.nodeValue === before.output) return;
-    const source = sourceOf(node);
-    const output = lookup(source, el) ?? source;
+    const output = extra ?? lookup(source, el) ?? source;
     writeText(node, source, output);
   }
 
@@ -1345,7 +2019,9 @@
     for (const attr of ATTRS) {
       if (attr === 'value' && !el.matches(BUTTON_INPUT)) continue;
       if (!el.hasAttribute(attr)) continue;
-      if (!ui(el, attr)) {
+      const source = originalAttr(el, attr);
+      const extra = moduleLookup(source, el, 'attr:' + attr);
+      if (!extra && !ui(el, attr)) {
         const saved = attrMemory.get(el)?.get(attr);
         if (saved && !el.closest(EDITABLE) && el.getAttribute(attr) === saved.output && saved.source !== saved.output) {
           saved.output = saved.source;
@@ -1353,8 +2029,7 @@
         }
         continue;
       }
-      const source = originalAttr(el, attr);
-      const output = lookup(source, el) ?? source;
+      const output = extra ?? lookup(source, el) ?? source;
       if (output === el.getAttribute(attr)) continue;
       let saved = attrMemory.get(el);
       if (!saved) attrMemory.set(el, saved = new Map());
@@ -1405,6 +2080,7 @@
       if (node.nodeType === Node.TEXT_NODE) {
         translateText(node);
       } else if (node.nodeType === Node.ELEMENT_NODE && !blocked(node)) {
+        if (CUSTOM_FORMS.test(path) && node.matches(PRESET_ROW)) translatePresetName(node);
         translateFragment(node);
         translateAttrs(node);
         for (const child of node.childNodes) pending.add(child);
@@ -1417,9 +2093,17 @@
     if (location.pathname !== path) schedule(document.documentElement);
     for (const record of records) {
       const node = record.target;
+      if (record.type === 'characterData' && textMemory.get(node)?.output === node.nodeValue) continue;
+      if (CUSTOM_FORMS.test(path)) {
+        const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+        const row = element?.closest?.(PRESET_ROW);
+        if (row) {
+          schedule(row);
+          continue;
+        }
+      }
       if (record.type === 'characterData') {
         if (blocked(node.parentElement)) continue;
-        if (textMemory.get(node)?.output === node.nodeValue) continue;
         schedule(node.parentElement.closest(FRAGMENT_ROOT) || node);
       } else if (record.type === 'attributes') {
         if (blocked(node) || (record.attributeName === 'value' && !node.matches(BUTTON_INPUT))) continue;
