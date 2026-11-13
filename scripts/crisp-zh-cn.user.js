@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Crisp 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.3.2
+// @version      0.4.2
 // @description  Crisp 网页后台的简体中文界面，保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -15,8 +15,8 @@
 // ==/UserScript==
 
 /*
- * 最后核对：2026-11-13
- * 覆盖范围：app.crisp.chat 登录后的导航、会话与联系人详情、访客、知识库、活动、分析、设置和已安装插件介绍，以及内嵌的 Hugo AI 客服和已采集的 Crisp 插件配置。
+ * 最后核对：2026-11-14
+ * 覆盖范围：Crisp 后台导航、收件箱菜单与会话详情、联系人、访客、知识库、活动、分析、设置和已安装插件介绍；内嵌的 Hugo 后台、插件配置及 Bot、WhatsApp、Hugo 会话侧栏。
  * 已知未覆盖：知识库编辑器、Canvas 访客地图、站外插件页面、未能加载的插件配置、需要特定数据或操作才能出现的状态。
  * 不翻译的内容：访客可见的聊天文案、预设值和模拟预览，以及用户数据、模板正文、插件名称和配置值、代码、凭据、网址及用户输入。
  * 调试：将 localStorage 的 crisp.zhCN.debug 设为 '1' 后刷新。删除该键或设为 '0' 后刷新关闭。
@@ -30,7 +30,8 @@
   const pluginFrame = location.origin === 'https://plugins.crisp.chat';
   if ((hugo || pluginFrame) && (window.self === window.top ||
     (location.ancestorOrigins?.[0] || new URL(document.referrer || location.origin).origin) !== 'https://app.crisp.chat')) return;
-  const frameScope = hugo ? 'U' : pluginFrame ? 'Q' : '';
+  const widgetFrame = (hugo || pluginFrame) && /\/widget\/?$/u.test(location.pathname);
+  const frameScope = widgetFrame ? 'W' : hugo ? 'U' : pluginFrame ? 'Q' : '';
 
   const COMMON_EXACT = [
     ["Account > Availability","账户 → 在线状态","text","span.c-command-palette-item__label > span"],
@@ -237,14 +238,18 @@
       id: "I", slug: "inbox", path: /^\/website\/[^\/]+\/inbox(?:\/spam|\/session_[^\/]+)?\/?$/u,
       exact: [
         ["Add","添加","text",".c-website-inbox-conversation__pane span.c-conversation-profile-widget-participants__action-wrap > span.c-conversation-profile-widget-participants__action"],
+        ["Add a participant","添加参与者","text",".c-new-conversation div.c-new-conversation__participants-add > span"],
         ["Add another condition","添加另一条条件","text",".c-new-filter span.c-base-button__inner > span.c-base-button__label"],
         ["Advanced Filter","高级筛选","text",".c-new-filter div.c-base-popup__header > div.c-base-popup__title"],
         ["AI Tools","AI 工具","text",".c-conversation-box__editor div.c-base-tab > span.c-base-tab__label"],
-        ["All","全部","text","div.c-base-tab > span.c-base-tab__label,span.c-base-button__inner > span.c-base-button__label"],
+        ["All","全部","text",".c-spam-menu__menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,div.c-base-tab > span.c-base-tab__label,span.c-base-button__inner > span.c-base-button__label"],
+        ["All conversations","全部会话","text",".c-conversation-menu-routing div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Assigned operator","分配的客服","text",".c-website-inbox-conversation__pane span.c-base-tooltip__value > span.c-base-tooltip__default"],
+        ["Assigned to me","分配给我","text",".c-conversation-menu-routing div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Automate spam","自动处理垃圾消息","text","p.c-base-floating-alert__title-wrap > span.c-base-floating-alert__title"],
-        ["Cancel","取消","text",".c-new-filter span.c-base-button__inner > span.c-base-button__label"],
+        ["Cancel","取消","text",".c-new-conversation span.c-base-button__inner > span.c-base-button__label,.c-new-filter span.c-base-button__inner > span.c-base-button__label"],
         ["Change list layout","更改列表布局","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Channel","渠道","text",".c-new-conversation div.c-field-select > label.c-field-label"],
         ["City","城市","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Configure my Spam Filter","配置垃圾消息筛选","text","span.c-base-button__inner > span.c-base-button__label"],
         ["Configure your spam filter","配置垃圾消息筛选规则","text","div.c-feature-bento__title > h6.c-feature-bento__title-text"],
@@ -256,9 +261,12 @@
         ["Conversation Routing","会话路由","text",".c-website-inbox-conversation__pane div.c-conversation-profile-widget-header__info > h4.c-conversation-profile-widget-header__info-title"],
         ["Conversation segments","会话分群","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Conversation state","会话状态","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,.c-new-filter div.c-field-select__field > div.c-field-select__option"],
-        ["Copy link","复制链接","text",".c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Copilot","助手","text",".c-conversation-box__editor .c-base-tabs__dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Copy link","复制链接","text","#app > .c-base-select-menu--no-arrow div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,.c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Country","国家或地区","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Create a filter","创建筛选条件","text",".c-new-filter div.c-base-empty-spot > div.c-base-empty-spot__title"],
+        ["Create a new conversation","新建会话","text",".c-new-conversation div.c-base-popup__header > div.c-base-popup__title"],
+        ["Create Conversation","创建会话","text",".c-new-conversation span.c-base-button__inner > span.c-base-button__label"],
         ["Create rules","创建规则","text","p.c-base-floating-alert__title-wrap > a.c-base-floating-alert__action"],
         ["Creation date","创建日期","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Crisp runs spam checks on all messages you receive. Messages that are likely spam end up here. If we made a mistake, you can still move a spam to your Main Inbox.","Crisp 会检查所有收到的消息。疑似垃圾消息会出现在这里。若发生误判，你可以将消息移回主收件箱。","text","div.c-feature-bento > p.c-feature-bento__subtitle"],
@@ -266,28 +274,46 @@
         ["Customize","自定义","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Data key…","数据键…","placeholder",".c-website-inbox-conversation__pane div.c-field-input__container > input.c-field-input__field"],
         ["Data value…","数据值…","placeholder",".c-website-inbox-conversation__pane div.c-field-input__container > input.c-field-input__field"],
-        ["Delete conversation","删除会话","text",".c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Date","日期","text",".c-navigate-to-date div.c-base-popup__content > label.c-field-label"],
+        ["Delete conversation","删除会话","text","#app > .c-base-select-menu--no-arrow div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,.c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Differs from","不等于","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Done","完成","text",".c-new-filter span.c-base-button__inner > span.c-base-button__label"],
         ["Edit","编辑","text",".c-conversation-box__editor div.c-base-tab > span.c-base-tab__label"],
+        ["Email","电子邮件","text",".c-new-conversation div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,.c-new-conversation div.c-field-select__field > div.c-field-select__option"],
+        ["Email address","电子邮箱地址","text",".c-new-conversation div.c-field-input__header > label.c-field-label"],
+        ["Emails","电子邮件","text",".c-spam-menu__menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Enter a label… (eg. 'Chats with segment: sales')","输入名称…（例如“销售分群的会话”）","placeholder",".c-new-filter div.c-field-input__container > input.c-field-input__field"],
+        ["Enter participant email address…","输入参与者的电子邮箱地址…","placeholder",".c-new-conversation div.c-field-input__container > input.c-field-input__field"],
+        ["Enter the email of the user…","输入用户的电子邮箱地址…","placeholder",".c-new-conversation div.c-field-input__container > input.c-field-input__field"],
+        ["Enter the full name of the user…","输入用户的姓名…","placeholder",".c-new-conversation div.c-field-input__container > input.c-field-input__field"],
+        ["Enter the subject of the email…","输入邮件主题…","placeholder",".c-new-conversation div.c-field-input__container > input.c-field-input__field"],
         ["Equals to","等于","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,.c-new-filter div.c-field-select__field > div.c-field-select__option"],
+        ["Expand","扩写","text",".c-conversation-box__editor .c-base-tabs__dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Filter choices…","筛选选项…","placeholder",".c-new-filter div.c-field-input__container > input.c-field-input__field"],
         ["Filter conversations by state, segments, emails and more.","按状态、分群、邮箱等条件筛选会话。","text",".c-new-filter div.c-base-empty-spot > div.c-base-empty-spot__description"],
         ["Filters","筛选","text","span.c-base-button__inner > span.c-base-button__label"],
+        ["Fix grammar","修正语法","text",".c-conversation-box__editor .c-base-tabs__dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Get Started","开始使用","text","span.c-base-button__inner > span.c-base-button__label"],
         ["Go to Inbox settings","前往收件箱设置","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Inbox | Crisp","收件箱 | Crisp","text","head > title"],
+        ["Jump to a specific date","跳转到指定日期","text",".c-conversation-box-content__date-dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,.c-navigate-to-date div.c-base-popup__header > div.c-base-popup__title"],
+        ["Jump to Date","跳转到该日期","text",".c-navigate-to-date span.c-base-button__inner > span.c-base-button__label"],
         ["Knowledge Base","知识库","text",".c-conversation-box__editor div.c-base-tab > span.c-base-tab__label"],
         ["Label for the custom filter","自定义筛选名称","text",".c-new-filter div.c-field-input__header > label.c-field-label"],
         ["Last profile events","最近资料事件","text",".c-website-inbox-conversation__pane div.c-conversation-profile-widget-header__info > h4.c-conversation-profile-widget-header__info-title"],
+        ["Last week","上周","text",".c-conversation-box-content__date-dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Main Inbox","主收件箱","text","#app > .c-base-select-menu--no-arrow .c-base-select-menu-item--id-default div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Main information","基本信息","text",".c-website-inbox-conversation__pane div.c-conversation-profile-widget-header__info > h4.c-conversation-profile-widget-header__info-title"],
         ["Manage all your chats in one inbox by integrating Crisp with WhatsApp, Messenger, Instagram, Line, Telegram, and more.","将 Crisp 与 WhatsApp、Messenger、Instagram、LINE、Telegram 等渠道集成，在同一个收件箱管理所有对话。","text","div.c-base-feature-highlight > p.c-base-feature-highlight__description"],
         ["Mark all messages as read","将所有消息标为已读","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Mark as resolved","标记为已解决","text","#app > .c-base-select-menu--no-arrow div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Mark as spam","标记为垃圾消息","text",".c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
-        ["Mark as unread","标记为未读","text",".c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Mark as unread","标记为未读","text","#app > .c-base-select-menu--no-arrow div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,.c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Messages from users all come here.","用户发送的消息都会显示在这里。","text",".c-conversation-menu div.c-base-empty-spot > div.c-base-empty-spot__description"],
+        ["More formal","更正式","text",".c-conversation-box__editor .c-base-tabs__dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["More friendly","更亲切","text",".c-conversation-box__editor .c-base-tabs__dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Move messages you do not want to spam with Automatic Triage rules.","使用自动分流规则，将你不想收到的消息移至垃圾消息。","text","div.c-base-floating-alert > p.c-base-floating-alert__message"],
-        ["Move to inbox","移至收件箱","text",".c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Move to inbox","移至收件箱","text","#app > .c-base-select-menu--no-arrow div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,.c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["New custom filter…","新建自定义筛选…","text","span.c-base-button__inner > span.c-base-button__label"],
         ["New Filter","新建条件","text",".c-new-filter span.c-base-button__inner > span.c-base-button__label"],
         ["Next","下一条","text",".c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
@@ -297,11 +323,15 @@
         ["None assigned","未分配","text",".c-website-inbox-conversation__pane div.c-field-select__field > div.c-field-select__option"],
         ["Note","备注","text",".c-conversation-box__editor div.c-base-tab > span.c-base-tab__label"],
         ["Other conversations","其他会话","text",".c-website-inbox-conversation__pane div.c-conversation-profile-widget-layout-action > div.c-conversation-profile-widget-layout-action__label"],
+        ["Participants","参与者","text",".c-new-conversation div.c-new-conversation__participants > label.c-field-label"],
         ["Pending","待处理","text",".c-conversation-box-topbar span.c-base-button__inner > span.c-base-button__label,.c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Phone number","电话号码","text",".c-new-conversation div.c-field-phone__header > label.c-field-label"],
+        ["Predict","预测回复","text",".c-conversation-box__editor .c-base-tabs__dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Previous","上一条","text",".c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Private notepad","私有记事本","text",".c-website-inbox-conversation__pane div.c-conversation-profile-widget-header__info > h4.c-conversation-profile-widget-header__info-title"],
         ["Quick jump","快速跳转","text",".c-website-inbox-conversation__pane div.c-conversation-profile-widget-header__info > h4.c-conversation-profile-widget-header__info-title"],
         ["Reminder","提醒","text",".c-conversation-box__editor div.c-base-tab > span.c-base-tab__label"],
+        ["Rephrase","改写","text",".c-conversation-box__editor .c-base-tabs__dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Reply","回复","text",".c-conversation-box__editor div.c-base-tab > span.c-base-tab__label"],
         ["Resolve all conversations","将所有会话标为已解决","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Resolved","已解决","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
@@ -312,11 +342,17 @@
         ["Set Subject","设置主题","text",".c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Shared image files","已分享的图片","text",".c-website-inbox-conversation__pane div.c-conversation-profile-widget-layout-action > div.c-conversation-profile-widget-layout-action__label"],
         ["Shortcuts","快捷回复","text",".c-conversation-box__editor div.c-base-tab > span.c-base-tab__label"],
+        ["SMS","短信","text",".c-new-conversation div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Spam","垃圾消息","text","div.c-spam-menu__header > span.c-spam-menu__title"],
         ["Spam filters help keep your Inbox clean","用垃圾消息筛选保持收件箱整洁","text","div.c-feature-bento__title > h6.c-feature-bento__title-text"],
         ["Start LiveTranslate","启动实时翻译","text",".c-website-inbox-conversation div.c-base-floating-action__inner > span.c-conversation-box-live-translate__action"],
         ["Start review mode","开始审查模式","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Subject","主题","text",".c-new-conversation div.c-field-input__header > label.c-field-label"],
+        ["The very beginning","会话开头","text",".c-conversation-box-content__date-dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["This field is required","此字段为必填项","text",".c-new-conversation span.c-base-tooltip__value > span.c-base-tooltip__default"],
+        ["Today","今天","text",".c-conversation-box-content__date-dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Transcript","会话记录","text",".c-website-inbox-conversation .c-base-select-menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
+        ["Unassigned","未分配","text",".c-conversation-menu-routing div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Unresolved","未解决","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["Update date","更新日期","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["User availability","用户在线状态","text",".c-new-filter div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
@@ -333,12 +369,23 @@
         ["Visitor IP address and ISP","访客 IP 地址和网络服务商","text",".c-website-inbox-conversation__pane span.c-base-tooltip__value > span.c-base-tooltip__default"],
         ["Visitor local time","访客当地时间","text",".c-website-inbox-conversation__pane span.c-base-tooltip__value > span.c-base-tooltip__default"],
         ["Write your private notes…","输入私有备注…","text",".c-website-inbox-conversation__pane div.c-editor-composer__editor > div.c-editor-composer__placeholder"],
+        ["Yesterday","昨天","text",".c-conversation-box-content__date-dropdown div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"],
         ["You are all good, you have no spam pending for review.","没有待审查的垃圾消息。","text","div.c-base-empty-spot > div.c-base-empty-spot__description"],
         ["You can tune your spam filter options so that more emails get to your Inbox, or else more emails go to Spam.","你可以调整垃圾消息筛选设置，让更多邮件进入收件箱，或将更多邮件归为垃圾消息。","text","div.c-feature-bento > p.c-feature-bento__subtitle"],
-        ["You have no available custom filters","暂无可用的自定义筛选条件","text","div.c-base-empty-spot > div.c-base-empty-spot__description"]
+        ["You have no available custom filters","暂无可用的自定义筛选条件","text","div.c-base-empty-spot > div.c-base-empty-spot__description"],
+        ["You have no conversations.","暂无会话。","text",".c-conversation-menu div.c-base-empty-spot > div.c-base-empty-spot__title"]
       ],
-      rules: [],
-      overrides: [],
+      rules: [
+        ["Block {user}","屏蔽 {user}","text","#app > .c-base-select-menu--no-arrow .c-base-select-menu-item--id-block .c-base-select-menu-item__label"]
+      ],
+      overrides: [
+        ["Name","姓名","text",".c-new-conversation div.c-field-input__header > label.c-field-label"],
+        ["Name","姓名","text",".c-new-conversation div.c-field-input__header > label.c-field-label"],
+        ["Name","姓名","text",".c-new-conversation div.c-field-input__header > label.c-field-label"],
+        ["Name","姓名","text",".c-new-conversation div.c-field-input__header > label.c-field-label"],
+        ["Name","姓名","text",".c-new-conversation div.c-field-input__header > label.c-field-label"],
+        ["Conversations","会话","text",".c-spam-menu__menu div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label"]
+      ],
       fragments: []
     },
     // H · agent · ^/website/[^/]+/agent(?:/|$)
@@ -2059,6 +2106,7 @@
         ["Activation","启用","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
         ["Add default quick replies","添加默认快捷回复","text","div.c-base-headlines__title > span.c-base-headlines__title","/automate/triggers"],
         ["Add localized quick replies","添加本地化的快捷回复","text","span.c-base-button__inner > span.c-base-button__label","/automate/triggers"],
+        ["Add new rule","添加规则","text",".c-base-modal:has(.c-routing-rule-write) div.c-base-title-heading > span.c-base-title-heading__title,.c-base-modal:has(.c-routing-rule-write) span.c-base-button__inner > span.c-base-button__label","/guidance/routing"],
         ["Add quick replies for your business in 1 click:","为你的业务一键添加快捷回复：","text","div.c-base-suggestions > span.c-base-suggestions__label","/automate/triggers"],
         ["Agent","客服","text","div.c-section-menu-accordion__label-wrapper > span.c-section-menu-accordion__label"],
         ["Agent","AI 客服","text","div.c-content-title__title > h2.c-content-title__title-text","/agent/settings"],
@@ -2076,6 +2124,7 @@
         ["AI Agent","AI 客服","text","div.c-layout-sidebar__identity > h1.c-layout-sidebar__identity-title"],
         ["AI Agent","AI 客服","text","p > span","/agent/router"],
         ["AI Agent","AI 客服","text","p.c-content-testbar__subtitle > span","/evaluate/playground"],
+        ["AI Agent","AI 客服","text",".c-base-modal:has(.c-routing-rule-write) div.c-field-select__field > div.c-field-select__option,.c-routing-rule-write__route-row div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/routing"],
         ["AI Agent is disabled","AI 客服已停用","text","div.c-base-banner__content > span","/agent/router"],
         ["AI Observability visual","AI 运行监测示意图","alt","div.c-evaluate-observability-welcome__visual > img.c-evaluate-observability-welcome__image","/evaluate/observability"],
         ["AI suggestions","AI 建议","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
@@ -2099,12 +2148,14 @@
         ["An AI bot that automatically supports all non-VIP users using Hugo. Allowing your team to focus on VIP users.","通过 Hugo 自动为非 VIP 用户提供支持，让团队专注服务 VIP 用户。","text","div.c-base-picker__titles > div.c-base-picker__subtitle","/automate/workflows"],
         ["analytics","分析","text","h2.c-content-title__title-text > span","/evaluate/analytics"],
         ["Analytics","分析","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
+        ["Analytics","分析","text",".c-base-modal:has(.c-copilot-skill-form) div.c-field-checkbox__information > label.c-field-label","/guidance/skills"],
         ["Analyze","分析","text","span.c-base-button__inner > span.c-base-button__label","/evaluate/suggestions"],
         ["Analyze your agent to better understand how they behave during conversations with customers and adjust their performance to best meet your expectations.","分析 AI 客服在客户会话中的表现，并按需要调整。","text","div.c-evaluate-observability-welcome__header > p.c-evaluate-observability-welcome__description","/evaluate/observability"],
         ["Answer a few quick questions and Hugo will write tailored instructions for you: tone, boundaries, escalation rules.","回答几个简短问题，Hugo 就会为你编写适合的语气、边界和转接规则。","text","div.c-settings-content-card__hint-banner-content > p.c-settings-content-card__hint-banner-description","/guidance/instructions"],
         ["Answer common user questions","在这里集中解答常见问题","text","p > span","/train/answers"],
         ["Answer guidance","回答指引","text","div.c-field-select > label.c-field-label","/agent/settings"],
         ["Answer guidance","回答指引","text","div.c-field-select > label.c-field-label","/evaluate/playground"],
+        ["Answer repetitive support questions","回答重复的客服问题","text",".c-modal-instruction-interview ul > li"],
         ["Ask for screenshot when user reports bug","用户报告故障时请对方提供截图","text","ul > li","/guidance/instructions"],
         ["Auto-detect","自动检测","text","div.c-field-select__field > div.c-field-select__option","/agent/settings"],
         ["Auto-resolve","自动解决","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/agent/settings"],
@@ -2116,7 +2167,9 @@
         ["Automatically escalate when Hugo can't find an answer","Hugo 找不到答案时自动转接","text","div.c-field-toggle__container > label.c-field-label","/agent/settings"],
         ["Automatically escalate when the user is frustrated or asks for a human","用户感到不满或要求人工客服时自动转接","text","div.c-field-toggle__container > label.c-field-label","/agent/settings"],
         ["automatically tagged","自动标注","text","p > span","/automate/topics"],
+        ["Available in","可用于","text",".c-base-modal:has(.c-copilot-skill-form) div.c-copilot-skill-form__surfaces > span.c-copilot-skill-form__label","/guidance/skills"],
         ["Average cost per conversation:","每次会话平均成本：","text","div.c-agent-billing__section-info > span.c-agent-billing__average-cost","/agent/billing"],
+        ["Back","上一步","text",".c-modal-instruction-interview span.c-base-button__inner > span.c-base-button__label"],
         ["Balanced","平衡","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/playground"],
         ["Billing","账单","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
         ["Billing","账单","text","h2.c-content-title__title-text > span","/agent/billing"],
@@ -2126,8 +2179,13 @@
         ["Build from scratch with full control or upload an existing chatbot setup.","从头搭建并完全自定义，或上传现有的聊天机器人配置。","text","div.c-base-picker__titles > div.c-base-picker__subtitle","/automate/workflows"],
         ["Built-in","内置","text","div.c-content-grouped-list__group-header > div.c-content-grouped-list__group-name","/guidance/routing"],
         ["Business description","业务介绍","text","div.c-agent-identity-form__label > label.c-field-label","/agent/settings"],
+        ["Cancel","取消","text",".c-modal-instruction-interview span.c-base-button__inner > span.c-base-button__label"],
+        ["Cancel","取消","text",".c-modal-confirm span.c-base-button__inner > span.c-base-button__label","/agent/router"],
+        ["Cancel","取消","text",".c-base-modal span.c-base-button__inner > span.c-base-button__label,.c-base-modal:has(.c-routing-rule-write) span.c-base-button__inner > span.c-base-button__label","/guidance/routing"],
+        ["Cancel","取消","text",".c-base-modal:has(.c-copilot-skill-form) span.c-base-button__inner > span.c-base-button__label","/guidance/skills"],
         ["Cards","付款卡","text","div.c-agent-billing__section-links > a.c-agent-billing__link","/agent/billing"],
         ["Change plan","更换套餐","text","span.c-base-button__inner > span.c-base-button__label","/agent/billing"],
+        ["Chart (Analytics only)","图表（仅分析）","text",".c-copilot-skill-form [data-name=\"output\"] div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/skills"],
         ["Choose automatically","自动选择","text","div.c-field-select__field > div.c-field-select__option","/agent/settings"],
         ["Choose automatically","自动选择","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,div.c-field-select__field > div.c-field-select__option","/evaluate/playground"],
         ["Collect details when users request downgrade","用户要求降级时收集具体情况","text","ul > li","/guidance/instructions"],
@@ -2141,35 +2199,53 @@
         ["Connect messaging channels","连接消息渠道","text","div.c-base-feature-highlight > p.c-base-feature-highlight__title","/evaluate/playground"],
         ["Conservative","谨慎","text","div.c-field-select__field > div.c-field-select__option","/agent/settings"],
         ["Conservative","谨慎","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,div.c-field-select__field > div.c-field-select__option","/evaluate/playground"],
+        ["Continue","继续","text",".c-modal-instruction-interview span.c-base-button__inner > span.c-base-button__label"],
         ["Conversation budget","会话预算","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/agent/settings"],
         ["Conversation Funnels","会话漏斗","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/evaluate/analytics"],
         ["Conversational","对话式","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,div.c-field-select__field > div.c-field-select__option","/agent/settings"],
         ["Copilot skills","助手技能","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
         ["Copilot skills","助手技能","text","div.c-content-title__title > h2.c-content-title__title-text","/guidance/skills"],
+        ["Create a new group to organize your items.","创建分组来整理条目。","text",".c-base-modal div.c-base-modal__head-content > div.c-base-modal__description","/guidance/routing"],
+        ["Create a new routing rule to define where conversations should be routed.","新建路由规则，指定会话应转到哪里。","text",".c-base-modal:has(.c-routing-rule-write) div.c-base-modal__head-content > div.c-base-modal__description","/guidance/routing"],
         ["Create chat workflows in minutes! Workflows allow you to create more traditional scenario-based chatbots. Your chatbots work side-by-side with your AI Agent.","几分钟即可创建聊天工作流。工作流可用来创建基于场景的传统聊天机器人，与 AI 客服协同工作。","text","div.c-base-modal__head-content > div.c-base-modal__description","/automate/workflows"],
+        ["Create Group","创建分组","text",".c-base-modal div.c-base-title-heading > span.c-base-title-heading__title,.c-base-modal span.c-base-button__inner > span.c-base-button__label","/guidance/routing"],
         ["Create my first trigger","创建第一个触发器","text","span.c-base-button__inner > span.c-base-button__label","/automate/triggers"],
         ["Create your own topics to organize and categorize incoming conversations.","创建自己的主题，为收到的会话归类。","text","div.c-content-title__description > p","/automate/topics"],
         ["Creative","创意","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/playground"],
         ["Credits are only used when Hugo is involved in a conversation.","只有 Hugo 参与会话时才消耗额度。","text","div.c-content-title__description > p","/agent/billing"],
         ["Custom date range","自定义日期范围","text","span.c-base-button__inner > span.c-base-button__label","/evaluate/analytics"],
+        ["Dashboard (Analytics only)","仪表盘（仅分析）","text",".c-copilot-skill-form [data-name=\"output\"] div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/skills"],
         ["Data sources","数据来源","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/agent/settings"],
         ["Days","天","text","div.c-field-select__field > div.c-field-select__option","/agent/router"],
         ["Days","天","text","div.c-field-select__field > div.c-field-select__option","/agent/settings"],
         ["Decide what to do","决定如何处理","text","p > span","/agent/router"],
         ["Default","默认","text","span.c-base-badge > div.c-base-badge__content","/guidance/routing"],
         ["Default (Global)","默认（全球）","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,div.c-field-select__field > div.c-field-select__option","/agent/settings"],
+        ["Describe what the skill does and write the instructions the copilot follows when it runs.","说明技能的用途，并写下助手运行时要遵循的指令。","text",".c-base-modal:has(.c-copilot-skill-form) div.c-base-modal__head-content > div.c-base-modal__description","/guidance/skills"],
         ["Describe what your business does, what you sell, and who your customers are. Acme ({url}) is a company based in Paris that sells t-shirts made of organic cotton.","介绍你的业务、销售的产品和目标客户。例如，Acme（{url}）是一家位于巴黎的公司，销售有机棉 T 恤。","placeholder","div.c-field-textarea__container > textarea.c-field-textarea__field","/agent/settings"],
+        ["Describe when this rule should apply","说明这条规则适用的情况","text",".c-routing-rule-write span.c-base-tooltip__value > span.c-base-tooltip__default","/guidance/routing"],
+        ["Description","说明","text",".c-base-modal:has(.c-routing-rule-write) div.c-field-textarea__header > label.c-field-label","/guidance/routing"],
+        ["Description","说明","text",".c-base-modal:has(.c-copilot-skill-form) div.c-field-input__header > label.c-field-label","/guidance/skills"],
         ["Direct and complete answers in a single message","在一条消息中直接给出完整答案","text","div.c-base-select-menu-item__wrapper > span.c-base-select-menu-item__description","/agent/settings"],
         ["Disabled","已停用","text","div.c-agent-billing__block > span.c-agent-billing__credits-value","/agent/billing"],
         ["Discover ways to improve your AI agent.","探索改进 AI 客服的方法。","text","div.c-suggestions-welcome__header > p.c-suggestions-welcome__description","/evaluate/suggestions"],
         ["Download CSV sample","下载 CSV 示例","text","span.c-base-button__inner > span.c-base-button__label","/train/documents"],
         ["Download this sample CSV file to get started with file imports","下载 CSV 示例，了解如何导入文件","text","div.c-base-banner > div.c-base-banner__content","/train/documents"],
         ["Drag and drop document files here","拖放文档到这里","text","label.c-field-file__container > span.c-field-file__action","/train/documents"],
+        ["e.g. Friendly and concise, avoid corporate jargon, use simple words...","例如：亲切简洁，避免行业套话，使用通俗的词…","placeholder",".c-modal-instruction-interview div.c-field-textarea__container > textarea.c-field-textarea__field"],
+        ["e.g. Never promise refunds, never give legal advice, never discuss competitors...","例如：不承诺退款、不提供法律建议、不讨论竞争对手…","placeholder",".c-modal-instruction-interview div.c-field-textarea__container > textarea.c-field-textarea__field"],
+        ["e.g. Qualify leads and get them to book a call, reduce repetitive support questions, help users get started...","例如：筛选销售线索并安排通话、减少重复的客服咨询、帮助用户上手…","placeholder",".c-modal-instruction-interview div.c-field-textarea__container > textarea.c-field-textarea__field"],
+        ["e.g. We only ship to Europe, support is available 9am-6pm CET, our product is B2B only...","例如：只向欧洲发货，客服时间为欧洲中部时间 9:00 至 18:00，产品仅面向企业…","placeholder",".c-modal-instruction-interview div.c-field-textarea__container > textarea.c-field-textarea__field"],
+        ["e.g. When the user is upset, asks for a refund, or mentions a billing problem...","例如：用户不满、要求退款或提到账单问题时…","placeholder",".c-modal-instruction-interview div.c-field-textarea__container > textarea.c-field-textarea__field"],
+        ["Enable AI Agent","启用 AI 客服","text",".c-modal-confirm div.c-base-title-heading > span.c-base-title-heading__title","/agent/router"],
         ["Enable AI Agent on channels","按渠道启用 AI 客服","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/agent/router"],
         ["Enable Hugo AI Agent on incoming conversations","让 Hugo AI 客服处理收到的会话","text","div.c-field-toggle__container > label.c-field-label","/agent/router"],
         ["Enable Hugo's built-in fallback model","启用 Hugo 内置的备用模型","text","div.c-field-toggle__container > label.c-field-label","/agent/settings"],
         ["Enable pay as you go","启用按使用量付费","text","span.c-base-button__inner > span.c-base-button__label","/agent/billing"],
+        ["Enabled","已启用","text",".c-base-modal:has(.c-copilot-skill-form) div.c-field-toggle__container > label.c-field-label","/guidance/skills"],
+        ["Enter a group name","输入分组名称","placeholder",".c-base-modal div.c-field-input__container > input.c-field-input__field","/guidance/routing"],
         ["Enter a name for your agent…","输入 AI 客服的名称…","placeholder","div.c-field-input__container > input.c-field-input__field","/agent/settings"],
+        ["Enter rule name","输入规则名称","placeholder",".c-base-modal:has(.c-routing-rule-write) div.c-field-input__container > input.c-field-input__field","/guidance/routing"],
         ["Enterprise Leads","企业潜在客户","text","ul > li","/automate/topics"],
         ["Escalate to inbox (default)","转到收件箱（默认）","text","div.c-field-select__field > div.c-field-select__option","/agent/billing"],
         ["Escalated","已转接","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/observability"],
@@ -2180,10 +2256,13 @@
         ["European Union","欧盟","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/agent/settings"],
         ["Evaluate","评估","text","div.c-section-menu-accordion__label-wrapper > span.c-section-menu-accordion__label"],
         ["Every conversation gets","每条会话都会","text","div.c-content-title__description > p","/automate/topics"],
+        ["Examples","示例","text",".c-modal-instruction-interview div.c-base-suggestions > span.c-base-suggestions__label"],
         ["Execute Hugo AI Agent directly","直接运行 Hugo AI 客服","text","div.c-base-select-menu-item__wrapper > span.c-base-select-menu-item__description,div.c-field-select__option > span.c-field-select__option-description","/evaluate/playground"],
         ["Execute through the workflow chatbot","通过工作流聊天机器人运行","text","div.c-base-select-menu-item__wrapper > span.c-base-select-menu-item__description","/evaluate/playground"],
+        ["Explain which kind of conversations should be routed to this rule... Example: 'Whenever a user is an Enterprise customer and asks anything related to billing, payments, invoices and refunds.'","说明哪些会话应使用这条规则。例如：企业版客户咨询账单、付款、发票或退款时。","placeholder",".c-base-modal:has(.c-routing-rule-write) div.c-field-textarea__container > textarea.c-field-textarea__field","/guidance/routing"],
         ["Explore suggested additions, edits and removals to keep your knowledge base and Q&A accurate and up to date.","查看建议新增、编辑和删除的内容，让知识库及问答保持准确和更新。","text","div.c-suggestions-welcome__header > p.c-suggestions-welcome__description","/evaluate/suggestions"],
         ["Export All","全部导出","text","span.c-base-button__inner > span.c-base-button__label","/evaluate/observability"],
+        ["Export all routing rules","导出所有路由规则","text",".c-settings-content-card .c-base-dropdown--button div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/routing"],
         ["Export CSV","导出 CSV","text","span.c-base-button__inner > span.c-base-button__label","/evaluate/analytics"],
         ["Failed","失败","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/observability"],
         ["Feature Requests","功能请求","text","ul > li","/automate/topics"],
@@ -2191,10 +2270,14 @@
         ["Files","文件","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
         ["Files","文件","text","div.c-settings-content-card-section-heading > div.c-settings-content-card-section-heading__title","/train/documents"],
         ["Fix this","修正","text","span.c-base-button__inner > span.c-base-button__label","/agent/router"],
+        ["For billing or payment disputes","涉及账单或付款争议时","text",".c-modal-instruction-interview ul > li"],
         ["for new conversations","处理新会话","text","div.c-content-title__title > h2.c-content-title__title-text","/agent/router"],
         ["for you.","。","text","div.c-content-title__description > p","/automate/integrations"],
+        ["Formal and professional","正式专业","text",".c-modal-instruction-interview ul > li"],
         ["Free Credits","免费额度","text","div.c-agent-billing__block > p.c-agent-billing__column-title","/agent/billing"],
+        ["Friendly and casual","亲切随和","text",".c-modal-instruction-interview ul > li"],
         ["from them.","并提取文本内容。","text","div.c-content-title__description > p","/train/documents"],
+        ["Generate Instructions","生成行为说明","text",".c-modal-instruction-interview span.c-base-button__inner > span.c-base-button__label"],
         ["Generate with AI","用 AI 生成","text","div.c-agent-identity-form__action > p","/agent/settings"],
         ["Get help from support","联系客服获取帮助","text","div.c-agent-settings__support-link > a","/agent/settings"],
         ["Get started","开始","text","span.c-base-button__inner > span.c-base-button__label","/evaluate/playground"],
@@ -2202,10 +2285,15 @@
         ["Go to agent settings","前往 AI 客服设置","text","span.c-base-button__inner > span.c-base-button__label","/evaluate/playground"],
         ["Go to Inbox","前往收件箱","text","p.c-base-floating-alert__title-wrap > a.c-base-floating-alert__action"],
         ["Grounded answers, however, responses are not fact-checked","参考资料作答，但不核实事实","text","div.c-base-select-menu-item__wrapper > span.c-base-select-menu-item__description","/evaluate/playground"],
+        ["Group","分组","text",".c-base-modal:has(.c-routing-rule-write) div.c-field-select > label.c-field-label","/guidance/routing"],
+        ["Group Name","分组名称","text",".c-base-modal div.c-field-input__header > label.c-field-label","/guidance/routing"],
         ["Groups","分组","text","div.c-settings-content-card-section-heading > div.c-settings-content-card-section-heading__title","/guidance/routing"],
         ["Guidance","行为指引","text","div.c-section-menu-accordion__label-wrapper > span.c-section-menu-accordion__label"],
+        ["Guide new users through onboarding","引导新用户上手","text",".c-modal-instruction-interview ul > li"],
         ["Guidelines that specify","说明","text","div.c-content-title__description > p","/guidance/instructions"],
+        ["Handle a refund request from the customer","处理客户的退款请求","placeholder",".c-base-modal:has(.c-copilot-skill-form) div.c-field-input__container > input.c-field-input__field","/guidance/skills"],
         ["Handled","已处理","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/observability"],
+        ["Helpdesk","知识库","text",".c-base-modal:has(.c-copilot-skill-form) div.c-field-checkbox__information > label.c-field-label","/guidance/skills"],
         ["here once. Your AI Agent handles the rest.","，其他交给 AI 客服。","text","div.c-content-title__description > p","/train/answers"],
         ["here:","：","text","div.c-content-testbar__head > p.c-content-testbar__subtitle","/evaluate/playground"],
         ["here.","。","text","div.c-content-title__description > p","/automate/integrations"],
@@ -2216,7 +2304,9 @@
         ["How to select the best model?","如何选择最合适的模型？","text","div.c-field-select-model > a.c-field-select-model__help-link","/evaluate/playground"],
         ["Hugo behaves much better with instructions","有了行为说明，Hugo 可以表现得更好","text","div.c-settings-content-card__hint-banner-content > p.c-settings-content-card__hint-banner-title","/guidance/instructions"],
         ["Hugo is disabled","Hugo 已停用","text","p > span","/evaluate/playground"],
+        ["Icon","图标","text",".c-base-modal div.c-field-emoji > label.c-field-label","/guidance/routing"],
         ["Image file, max. 10MB","图片文件，最大 10 MB","text","div.c-field-image__label-wrapper > span.c-field-image__instructions","/agent/settings"],
+        ["Import routing rules","导入路由规则","text",".c-settings-content-card .c-base-dropdown--button div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/routing"],
         ["Import Your Own","导入自己的工作流","text","span.c-base-button__inner > span.c-base-button__label","/automate/workflows"],
         ["Imported files","已导入的文件","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/train/documents"],
         ["Imported websites","已导入的网站","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/train/webpages"],
@@ -2224,9 +2314,12 @@
         ["in different scenarios (best practices and things to avoid).","不同场景下的问题，包括推荐和应避免的做法。","text","div.c-content-title__description > p","/guidance/instructions"],
         ["in specific situations.","及其适用场景。","text","div.c-content-title__description > p","/guidance/routing"],
         ["In your Automated inbox, see which conversations your AI Agent handled and how it replied.","在自动化收件箱中，查看 AI 客服处理过的会话及回复。","text","div.c-base-floating-alert > p.c-base-floating-alert__message"],
+        ["Inbox","收件箱","text",".c-routing-rule-write__route-row div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/routing"],
+        ["Inbox","收件箱","text",".c-base-modal:has(.c-copilot-skill-form) div.c-field-checkbox__information > label.c-field-label","/guidance/skills"],
         ["Install our built-in integrations, or connect to","安装内置集成，或在这里连接","text","div.c-content-title__description > p","/automate/integrations"],
         ["Instructions","行为说明","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
         ["Instructions","行为说明","text","div.c-settings-content-card-section-heading > div.c-settings-content-card-section-heading__title,div.c-settings-content-card__head-title > span.c-settings-content-card__name-label,h2.c-content-title__title-text > span","/guidance/instructions"],
+        ["Instructions","指令","text",".c-base-modal:has(.c-copilot-skill-form) div.c-field-textarea__header > label.c-field-label","/guidance/skills"],
         ["Integrate","集成","text","h2.c-content-title__title-text > span","/automate/integrations"],
         ["Integrations & MCP","集成与 MCP","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
         ["Invoices","发票","text","div.c-agent-billing__section-links > a.c-agent-billing__link","/agent/billing"],
@@ -2234,6 +2327,7 @@
         ["Last month — 1st to 31st","上个月 · 1 日至 31 日","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/analytics"],
         ["Last week — Monday to Sunday","上周 · 周一至周日","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/analytics"],
         ["Last year — January to December","去年 · 1 月至 12 月","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/analytics"],
+        ["Let the copilot use it on its own","允许助手自行运行","text",".c-base-modal:has(.c-copilot-skill-form) div.c-field-toggle__container > label.c-field-label","/guidance/skills"],
         ["Limit AI spend per conversation","限制每次会话的 AI 支出","text","div.c-field-toggle__container > label.c-field-label","/agent/settings"],
         ["Loading analytics data...","正在加载分析数据…","text","div.c-analytics-conversation-funnels > div.c-analytics-conversation-funnels__loading","/evaluate/analytics"],
         ["Loading answers…","正在加载问答…","text","div.c-settings-content-card__loader > span.c-settings-content-card__loader-label","/train/answers"],
@@ -2256,7 +2350,11 @@
         ["Monitor your Agent","查看 AI 客服的表现","text","p.c-base-floating-alert__title-wrap > span.c-base-floating-alert__title"],
         ["Monthly","每月","text","div.c-field-select__field > div.c-field-select__option","/agent/billing"],
         ["My skills","我的技能","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/guidance/skills"],
+        ["Name","名称","text",".c-base-modal:has(.c-copilot-skill-form) div.c-field-input__header > label.c-field-label","/guidance/skills"],
         ["Natural chat-like responses, may split into multiple messages","像聊天一样自然回答，可以分成多条消息","text","div.c-base-select-menu-item__wrapper > span.c-base-select-menu-item__description,div.c-field-select__option > span.c-field-select__option-description","/agent/settings"],
+        ["Never discuss competitors","不讨论竞争对手","text",".c-modal-instruction-interview ul > li"],
+        ["Never give legal or medical advice","不提供法律或医疗建议","text",".c-modal-instruction-interview ul > li"],
+        ["Never promise discounts or refunds","不承诺折扣或退款","text",".c-modal-instruction-interview ul > li"],
         ["New","新建","text","span.c-base-button__inner > span.c-base-button__label","/automate/topics"],
         ["New","新建","text","span.c-base-button__inner > span.c-base-button__label","/guidance/instructions"],
         ["New","新建","text","span.c-base-button__inner > span.c-base-button__label","/guidance/routing"],
@@ -2279,6 +2377,9 @@
         ["NEW","新功能","text","span.c-base-badge > div.c-base-badge__content","/train/answers"],
         ["NEW","新功能","text","span.c-base-badge > div.c-base-badge__content","/train/documents"],
         ["NEW","新功能","text","span.c-base-badge > div.c-base-badge__content","/train/webpages"],
+        ["New copilot skill","新建助手技能","text",".c-base-modal:has(.c-copilot-skill-form) div.c-base-title-heading > span.c-base-title-heading__title","/guidance/skills"],
+        ["New group","新建分组","text",".c-settings-content-card .c-base-button--split div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/routing"],
+        ["New routing rule","新建路由规则","text",".c-settings-content-card .c-base-button--split div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/routing"],
         ["New skill","新建技能","text","span.c-base-button__inner > span.c-base-button__label","/guidance/skills"],
         ["New Trigger","新建触发器","text","span.c-base-button__inner > span.c-base-button__label","/automate/triggers"],
         ["New Workflow","新建工作流","text","span.c-base-button__inner > span.c-base-button__label","/automate/workflows"],
@@ -2286,6 +2387,7 @@
         ["No conversations found.","未找到会话。","text","div.c-evaluate-observability__list-body > div.c-evaluate-observability__empty","/evaluate/observability"],
         ["No documents yet…","还没有文档…","text","div.c-content-grouped-list__empty-items > span","/train/documents"],
         ["No escalation data available yet.","暂无转接数据。","text","div.c-analytics-escalation-rate > div.c-analytics-escalation-rate__empty","/evaluate/analytics"],
+        ["No group","未分组","text",".c-base-modal:has(.c-routing-rule-write) div.c-field-select__field > div.c-field-select__option","/guidance/routing"],
         ["No instructions yet…","还没有行为说明…","text","div.c-content-grouped-list__empty-items > span","/guidance/instructions"],
         ["No topics data available for the selected period.","所选时段没有主题数据。","text","div.c-analytics-topics-volume > div.c-analytics-topics-volume__empty","/evaluate/analytics"],
         ["No topics yet…","还没有主题…","text","div.c-content-grouped-list__empty-items > span","/automate/topics"],
@@ -2299,12 +2401,17 @@
         ["operator copilot","客服助手","text","div.c-base-banner__content > span","/guidance/skills"],
         ["Operators type /name to run a skill, and the copilot can pick one on its own when a request matches its description.","客服人员可以输入 /name 运行技能。请求符合技能描述时，助手也可以自行选择技能。","text","div.c-content-title__description > p","/guidance/skills"],
         ["Operators' skills","客服人员的技能","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/guidance/skills"],
+        ["Our products, plans and pricing","产品、套餐和价格","text",".c-modal-instruction-interview ul > li"],
+        ["Our support hours and timezone","客服时间与时区","text",".c-modal-instruction-interview ul > li"],
         ["Pay as you go","按使用量付费","text","div.c-agent-billing__block > p.c-agent-billing__column-title","/agent/billing"],
         ["PDF files can only be read if text can be selected when you open them from your computer.","只有可以在电脑上打开并选中文本的 PDF 文件才能被读取。","text","div.c-field-notice > span.c-field-notice__text","/train/documents"],
+        ["Plain text","纯文本","text",".c-base-modal:has(.c-copilot-skill-form) div.c-field-select__field > div.c-field-select__option,.c-copilot-skill-form [data-name=\"output\"] div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/skills"],
         ["Plan & subscription","套餐与订阅","text","div.c-agent-billing__section-header > h3.c-agent-billing__section-title","/agent/billing"],
         ["Plans name and pricing","套餐名称和定价","text","ul > li","/guidance/instructions"],
         ["playground","测试台","text","h2.c-content-title__title-text > span","/evaluate/playground"],
         ["Playground","测试台","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
+        ["Private note (Inbox only)","私有备注（仅收件箱）","text",".c-copilot-skill-form [data-name=\"output\"] div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/skills"],
+        ["Qualify leads and book meetings","筛选销售线索并安排会议","text",".c-modal-instruction-interview ul > li"],
         ["questions & answers","问答","text","h2.c-content-title__title-text > span","/train/answers"],
         ["Questions & answers","问答","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/train/answers"],
         ["Questions & Answers","问答","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
@@ -2313,17 +2420,22 @@
         ["Re-activate agent after resolution","解决会话后重新启用","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/agent/router"],
         ["Re-activation delay","重新启用前等待","text","div.c-field-input__header > label.c-field-label","/agent/router"],
         ["Region","区域","text","div.c-field-select > label.c-field-label","/agent/settings"],
+        ["Reply draft (Inbox only)","回复草稿（仅收件箱）","text",".c-copilot-skill-form [data-name=\"output\"] div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/skills"],
         ["Resolve after","解决前等待","text","div.c-field-input__header > label.c-field-label","/agent/settings"],
         ["Response style","回答风格","text","div.c-field-select > label.c-field-label","/agent/settings"],
+        ["Result","输出结果","text",".c-base-modal:has(.c-copilot-skill-form) div.c-field-select > label.c-field-label","/guidance/skills"],
         ["retrieve data and perform actions","获取数据和执行操作","text","p > span","/automate/integrations"],
         ["Route all production questions to agent","将所有生产环境相关问题转给客服","text","ul > li","/guidance/routing"],
         ["Route all refund requests to support team","将所有退款请求转给支持团队","text","ul > li","/guidance/routing"],
         ["Route any user wanting a demo to a workflow","将请求演示的用户转到工作流","text","ul > li","/guidance/routing"],
+        ["Route to:","转至：","text",".c-base-modal:has(.c-routing-rule-write) div.c-routing-rule-write__route-row > span.c-routing-rule-write__route-label","/guidance/routing"],
         ["Routing","路由","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
         ["Routing","路由","text","h2.c-content-title__title-text > span","/guidance/routing"],
         ["Routing rules","路由规则","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/guidance/routing"],
+        ["Rule name","规则名称","text",".c-base-modal:has(.c-routing-rule-write) div.c-field-input__header > label.c-field-label","/guidance/routing"],
         ["Rules that define","规定","text","div.c-content-title__description > p","/guidance/routing"],
         ["SaaS Apps","SaaS 应用","text","ul > li","/automate/triggers"],
+        ["Save skill","保存技能","text",".c-base-modal:has(.c-copilot-skill-form) span.c-base-button__inner > span.c-base-button__label","/guidance/skills"],
         ["Search documents…","搜索文档…","placeholder","div.c-field-input__container > input.c-field-input__field","/train/documents"],
         ["Search domains…","搜索域名…","placeholder","div.c-field-input__container > input.c-field-input__field","/train/webpages"],
         ["Search instructions…","搜索行为说明…","placeholder","div.c-field-input__container > input.c-field-input__field","/guidance/instructions"],
@@ -2334,6 +2446,7 @@
         ["See your","查看","text","div.c-content-testbar__head > p.c-content-testbar__subtitle","/automate/triggers"],
         ["Set up","设置","text","div.c-content-title__title > h2.c-content-title__title-text","/automate/topics"],
         ["Set up in 2 minutes","两分钟完成设置","text","span.c-base-button__inner > span.c-base-button__label","/guidance/instructions"],
+        ["Set Up Instructions","设置行为说明","text",".c-modal-instruction-interview div.c-base-title-heading > span.c-base-title-heading__title"],
         ["settings","设置","text","div.c-content-title__title > h2.c-content-title__title-text","/agent/billing"],
         ["settings","设置","text","h2.c-content-title__title-text > span","/agent/settings"],
         ["Settings","设置","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
@@ -2355,8 +2468,10 @@
         ["Setup required","需要设置","text","span.c-base-badge > div.c-base-badge__content","/train/answers"],
         ["Setup required","需要设置","text","span.c-base-badge > div.c-base-badge__content","/train/documents"],
         ["Setup required","需要设置","text","span.c-base-badge > div.c-base-badge__content","/train/webpages"],
+        ["Short and to the point","简短直接","text",".c-modal-instruction-interview ul > li"],
         ["Show an","向","text","div.c-content-title__description > p","/automate/triggers"],
         ["Show office hours availability when escalating","转接时显示客服的工作时间","text","div.c-field-toggle__container > label.c-field-label","/agent/router"],
+        ["Shown in the / menu, and read by the copilot to decide when to use the skill on its own.","显示在 / 菜单中，助手会根据这段说明判断何时自行使用此技能。","text",".c-copilot-skill-form span.c-base-tooltip__value > span.c-base-tooltip__default","/guidance/skills"],
         ["Since a month — Last 30 days","过去一个月 · 最近 30 天","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/analytics"],
         ["Since a week — Last 7 days","过去一周 · 最近 7 天","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,div.c-field-date-range-picker__container > div.c-field-date-range-picker__range","/evaluate/analytics"],
         ["Since a year — Last 365 days","过去一年 · 最近 365 天","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/analytics"],
@@ -2366,6 +2481,7 @@
         ["Start","开始","text","span.c-base-button__inner > span.c-base-button__label","/automate/workflows"],
         ["Start With Another Template","使用其他模板","text","div.c-base-picker__titles > div.c-base-picker__title","/automate/workflows"],
         ["Start with one of our available templates.","从现有模板开始。","text","div.c-base-picker__titles > div.c-base-picker__subtitle","/automate/workflows"],
+        ["Step by step, what the copilot must do when this skill runs…","逐步说明助手运行此技能时要做什么…","placeholder",".c-base-modal:has(.c-copilot-skill-form) div.c-field-textarea__container > textarea.c-field-textarea__field","/guidance/skills"],
         ["Suggest resolving conversation when resolve intent is detected","检测到结束意图时建议将会话标为已解决","text","div.c-field-toggle__container > label.c-field-label","/agent/settings"],
         ["suggestions","建议","text","h1.c-suggestions-welcome__title > span.c-suggestions-welcome__title-bold","/evaluate/suggestions"],
         ["Suggestions","建议","text","div.c-base-suggestions > span.c-base-suggestions__label","/guidance/instructions"],
@@ -2376,6 +2492,7 @@
         ["Test with Chatbot","使用聊天机器人测试","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/playground"],
         ["Test with Hugo","使用 Hugo 测试","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label,div.c-field-select__field > div.c-field-select__option","/evaluate/playground"],
         ["Test your","在此测试","text","div.c-content-testbar__head > p.c-content-testbar__subtitle","/evaluate/playground"],
+        ["Text to copy","可复制文本","text",".c-copilot-skill-form [data-name=\"output\"] div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/skills"],
         ["to create workflows with complex chaining.","，串联更复杂的流程。","text","div.c-automate-workflows-index__empty-body > p","/automate/workflows"],
         ["Today","今天","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/analytics"],
         ["Topic detection","主题识别","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
@@ -2407,13 +2524,24 @@
         ["websites","网站","text","h2.c-content-title__title-text > span","/train/webpages"],
         ["Welcome to the Workflow builder!","欢迎使用工作流编辑器！","text","div.c-automate-workflows-index__empty-wrapper > div.c-automate-workflows-index__empty-header","/automate/workflows"],
         ["Welcome to the Workflow Builder!","欢迎使用工作流编辑器！","text","div.c-base-title-heading > span.c-base-title-heading__title","/automate/workflows"],
+        ["What is the main goal Hugo should help you achieve?","你希望 Hugo 帮你实现的主要目标是什么？","text",".c-modal-instruction-interview div.c-field-textarea__header > label.c-field-label"],
+        ["What operators type after the slash. Lowercase letters, digits and dashes.","客服在斜杠后输入的内容，只能用小写字母、数字和连字符。","text",".c-copilot-skill-form span.c-base-tooltip__value > span.c-base-tooltip__default","/guidance/skills"],
+        ["What should Hugo always keep in mind about your business?","关于你的业务，有哪些事是 Hugo 必须记住的？","text",".c-modal-instruction-interview div.c-field-textarea__header > label.c-field-label"],
+        ["What should Hugo never do or say?","Hugo 绝对不能做什么或说什么？","text",".c-modal-instruction-interview div.c-field-textarea__header > label.c-field-label"],
         ["what the agent must do","AI 客服应采取的操作","text","p > span","/guidance/routing"],
+        ["What tone should Hugo use?","Hugo 应该用什么语气？","text",".c-modal-instruction-interview div.c-field-textarea__header > label.c-field-label"],
         ["When Hugo AI Agent is disabled, all incoming conversations will be routed to workflows instead.","Hugo AI 客服停用时，所有收到的会话都将转到工作流。","text","div.c-agent-router__onboarding-tooltip > div.c-agent-router__onboarding-tooltip-description","/agent/router"],
+        ["When on, the copilot runs the skill whenever an operator request matches its description, without /name.","开启后，客服的请求符合技能说明时，助手无需 /name 命令即可运行该技能。","text",".c-copilot-skill-form span.c-base-tooltip__value > span.c-base-tooltip__default","/guidance/skills"],
+        ["When should Hugo hand off to a human?","Hugo 什么时候应该转接人工客服？","text",".c-modal-instruction-interview div.c-field-textarea__header > label.c-field-label"],
+        ["When the user asks for a human","用户要求人工客服时","text",".c-modal-instruction-interview ul > li"],
+        ["When the user is upset or frustrated","用户不满或感到挫败时","text",".c-modal-instruction-interview ul > li"],
         ["When your AI credits run out, Hugo escalates the conversation to your inbox by default. With the Plus plan, you can instead hand the conversation over to a workflow.","AI 额度用完时，Hugo 默认会将会话转到你的收件箱。Plus 套餐也允许将会话交给工作流。","text","div.c-agent-billing__block > p.c-agent-billing__block-description","/agent/billing"],
         ["whenyou receive a new conversation.","收到的新会话。","text","div.c-content-title__description > p","/agent/router"],
+        ["Who our typical customers are","主要客户群体","text",".c-modal-instruction-interview ul > li"],
         ["with external tools","外部工具","text","div.c-content-title__title > h2.c-content-title__title-text","/automate/integrations"],
         ["with the right topic.","合适的主题。","text","div.c-content-title__description > p","/automate/topics"],
         ["Workflow","工作流","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/observability"],
+        ["Workflow","工作流","text",".c-routing-rule-write__route-row div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/guidance/routing"],
         ["Workflow builder","工作流编辑器","text","div.c-section-menu-item__label-wrapper > div.c-section-menu-item__label-text"],
         ["Workflows are active","工作流已启用","text","div.c-agent-router__onboarding-tooltip > div.c-agent-router__onboarding-tooltip-title","/agent/router"],
         ["Workflows are free and not charged.","工作流可免费使用。","text","p > span","/agent/billing"],
@@ -2421,7 +2549,9 @@
         ["Workflows can be","工作流可以","text","div.c-automate-workflows-index__empty-body > p","/automate/workflows"],
         ["Workspace skills","工作区技能","text","div.c-settings-content-card__head-title > span.c-settings-content-card__name-label","/guidance/skills"],
         ["Write questions and their answers, which your AI Agent will use to answer questions from your users.","编写问题和答案，供 AI 客服回答用户的问题。","text","div.c-content-title__description > p","/train/answers"],
+        ["Yes, Confirm","确认启用","text",".c-modal-confirm span.c-base-button__inner > span.c-base-button__label","/agent/router"],
         ["Yesterday","昨天","text","div.c-base-select-menu-item__inner > span.c-base-select-menu-item__label","/evaluate/analytics"],
+        ["You are about to enable AI Agent for new conversations.","即将启用 AI 客服来处理新会话。","text",".c-modal-confirm div.c-base-modal__head-content > div.c-base-modal__text","/agent/router"],
         ["You can also start with a blank workflow or import your own","也可创建空白工作流或导入已有工作流","text","div.c-base-picker__titles > div.c-base-picker__title","/automate/workflows"],
         ["You can choose to send the conversation to your","可以将会话转给","text","div.c-content-title__description > p","/agent/router"],
         ["You can use Triggers to avoid churn on your website and message leaving customers.","你可以用触发器给即将离开网站的访客发送消息，减少流失。","text","div.c-content-title__description > p","/automate/triggers"],
@@ -2429,6 +2559,8 @@
         ["your own MCP servers","你自己的 MCP 服务器","text","p > span","/automate/integrations"]
       ],
       rules: [
+        ["Question {n} of {n} — answer in your own words, or leave empty to skip.","第 {n} 题，共 {n} 题。请用自己的话回答，留空可跳过。","text",".c-modal-instruction-interview .c-base-modal__description"],
+        ["{n} / {n} characters","{n} / {n} 个字符","text",":is(.c-modal-instruction-interview,.c-base-modal:has(.c-routing-rule-write),.c-base-modal:has(.c-copilot-skill-form)) .c-field-textarea__wrapper > .c-field-description"],
         ["The auto-chosen model is {model} from {provider}","自动选择的模型：{model}（提供方：{provider}）","text",".c-field-notice > .c-field-notice__text"],
         ["No more free credits left this month in your Crisp plan (renews on {date})","Crisp 套餐的本月免费额度已用完（续期日期：{date}）","text",".c-agent-billing__block-description"],
         ["Describe what your business does, what you sell, and who your customers are. Acme ({url}) is a company based in Paris that sells t-shirts made of organic cotton.","介绍你的业务、销售的产品和目标客户。例如，Acme（{url}）是一家位于巴黎的公司，销售有机棉 T 恤。","placeholder",".c-agent-settings textarea.c-field-textarea__field"]
@@ -2494,6 +2626,27 @@
         ["Welcome to the Crisp Chatbot Builder!","欢迎使用 Crisp 聊天机器人编辑器！","text","div.c-base-popup__title > h2.c-base-popup__title-text"],
         ["You can also start with a blank scenario or import your own","也可创建空白场景或导入已有场景","text","div.c-base-card__titles > div.c-base-card__title"],
         ["Your chatbot is your 24/7 digital assistant—engaging users, automating FAQs, capturing leads, and enhancing support.","聊天机器人可以全天与用户互动、回答常见问题、收集销售线索并协助客服。","text","div.c-scenarios-index__empty-body > p.c-scenarios-index__paragraph"]
+      ],
+      rules: [],
+      overrides: [],
+      fragments: []
+    },
+    // W · inbox-plugin-widget · ^(?:/widget|/urn:crisp\.im:(?:bot:[0-9]+|whatsapp:[0-9]+/ui)/widget)/?$
+    {
+      id: "W", slug: "inbox-plugin-widget", path: /^(?:\/widget|\/urn:crisp\.im:(?:bot:[0-9]+|whatsapp:[0-9]+\/ui)\/widget)\/?$/u,
+      exact: [
+        ["Agent","AI 客服","text","#app div.c-widget-section > div.c-widget-section__header"],
+        ["Answer with Hugo","使用 Hugo 回复","text","#app div.c-widget-button__content > span.c-widget-button__text"],
+        ["Can't find your template? Click to Refresh","找不到模板？点击刷新","text",".c-whatsapp-widget-templates div.c-whatsapp-widget-templates__refresh-wrapper > a.c-whatsapp-widget-templates__refresh"],
+        ["Category","类别","text",".c-whatsapp-widget-templates div.c-whatsapp-widget-select__button > span.c-whatsapp-widget-select__text"],
+        ["Hugo is active","Hugo 已启用","text",".caw-widget div > div"],
+        ["Hugo is installed on this website. Please use the Hugo widget instead.","此网站已安装 Hugo。请改用 Hugo 侧栏组件。","text",".caw-widget div > p"],
+        ["Language","语言","text",".c-whatsapp-widget-templates div.c-whatsapp-widget-select__button > span.c-whatsapp-widget-select__text"],
+        ["No workflows available.","没有可用的工作流。","text","#app div.c-widget-section__body > div.c-widget-section__empty"],
+        ["Run workflow","运行工作流","text","#app div.c-widget-section > div.c-widget-section__header"],
+        ["Search","搜索","placeholder",".c-whatsapp-widget-templates div.c-whatsapp-widget-select__input > input.c-whatsapp-widget-select__field-input"],
+        ["Session has no WhatsApp recipient.","此会话没有 WhatsApp 收件人。","text",".c-whatsapp-widget-templates div.c-whatsapp-widget-notice > span.c-whatsapp-widget-notice__message"],
+        ["Settings","设置","text",".c-whatsapp-widget-controls__settings span.c-base-tooltip__value > span.c-base-tooltip__default"]
       ],
       rules: [],
       overrides: [],
@@ -2599,7 +2752,7 @@
 
   const common = exactIndex(frameScope ? [] : COMMON_EXACT);
   const commonRules = compileRules(frameScope ? [] : COMMON_RULES);
-  const scopes = SCOPES.filter(scope => frameScope ? scope.id === frameScope : scope.id !== 'U' && scope.id !== 'Q').map(scope => ({
+  const scopes = SCOPES.filter(scope => frameScope ? scope.id === frameScope : !['U', 'Q', 'W'].includes(scope.id)).map(scope => ({
     ...scope, exact: exactIndex(scope.exact), overrides: exactIndex(scope.overrides), rules: compileRules(scope.rules),
     fragments: scope.fragments.map(([selector, source, target, position]) => ({
       selector, source, target, position, patterns: source.map(part => part.includes('{n}')
@@ -2650,7 +2803,8 @@
   }
 
   function inScope(element) {
-    return !!element && (element.matches('head > title') || element.closest('#app')) && !isBlocked(element);
+    return !!element && (element.matches('head > title') || element.closest('#app') ||
+      (widgetFrame && pluginFrame && element.closest('.caw-widget'))) && !isBlocked(element);
   }
 
   function debugMiss(key, element, type) {
@@ -2687,6 +2841,30 @@
     if (node.nodeValue === value) return;
     textState.set(node, { source, value });
     node.nodeValue = value;
+  }
+
+  function localizeInboxDateControls(root) {
+    // 仅放行被保护的消息区和会话列表中的日期组件。
+    const selector = '.c-conversation-box-content__date-inner .c-base-floating-action__inner > span,.c-conversation-menu-item-headline__updated-at,' +
+      '.c-conversation-box-content__date-dropdown .c-base-select-menu-item__label';
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const parent = (root.nodeType === Node.TEXT_NODE ? root.parentElement : root).closest?.(selector);
+    const elements = parent ? [parent] : root.querySelectorAll?.(selector) || [];
+    for (const element of elements) {
+      const node = element.firstChild;
+      if (!node || node.nodeType !== Node.TEXT_NODE || node !== element.lastChild) continue;
+      const source = sourceOf(node);
+      const key = normalize(source);
+      if (element.matches('.c-base-select-menu-item__label')) {
+        const translated = lookup(key, element, 'text', source);
+        if (translated !== undefined) writeText(node, source, keepWhitespace(source, translated));
+        continue;
+      }
+      const match = /^([1-9]|[12]\d|3[01]) ([A-Z][a-z]+)$/u.exec(key);
+      if (!match) continue;
+      const month = months.findIndex(name => name === match[2] || name.slice(0, 3) === match[2]);
+      if (month >= 0) writeText(node, source, keepWhitespace(source, (month + 1) + ' 月 ' + match[1] + ' 日'));
+    }
   }
 
   function processText(node, fragments) {
@@ -2800,6 +2978,7 @@
     pending.clear();
     const connected = roots.filter(root => root === document || root.isConnected);
     const minimal = connected.filter(root => !connected.some(other => other !== root && other.contains(root)));
+    if (active.some(scope => scope.id === 'I')) minimal.forEach(localizeInboxDateControls);
     const iterator = (function* () {
       for (const root of minimal) yield* walk(root);
     })();
