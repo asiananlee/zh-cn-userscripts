@@ -46,6 +46,7 @@
 | Logs | 日志 | 初稿 | |
 | Workspace | 工作区 | 初稿 | |
 | Ticket | 工单 | 初稿 | 客服请求 |
+| Conversation | 会话 | 初稿 | 客服后台中的对话，与单条消息区分 |
 | API key | API 密钥 | 初稿 | |
 | Rate limit | 速率限制 | 初稿 | |
 | Prompt | 提示词 | 初稿 | |
