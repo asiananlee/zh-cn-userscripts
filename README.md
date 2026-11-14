@@ -15,7 +15,7 @@
 
 | 站点 | 覆盖范围 | 版本 | 状态 | 安装 |
 | --- | --- | --- | --- | --- |
-| [Crisp](https://crisp.chat/) | 网页后台、内嵌 AI 客服与插件（`app.crisp.chat`、`app.hugo.ai`、`plugins.crisp.chat`） | 0.5.0 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/crisp-zh-cn.user.js) |
+| [Crisp](https://crisp.chat/) | 网页后台、内嵌 AI 客服、插件与 n8n 集成页（`app.crisp.chat`、`app.hugo.ai`、`plugins.crisp.chat`、`n8n.io/integrations/crisp/`） | 0.6.2 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/crisp-zh-cn.user.js) |
 | [OpenRouter](https://openrouter.ai) | 账户与工作区控制台 `openrouter.ai` | 0.1.1 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/openrouter-zh-cn.user.js) |
 | [Postmark](https://postmarkapp.com) | 账户控制台 `account.postmarkapp.com` | 0.1.1 | 部分验证 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/postmark-zh-cn.user.js) |
 | [Text](https://www.text.com) | 登录后后台主要界面 `www.text.com/app/` | 0.1.9 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/text-zh-cn.user.js) |
