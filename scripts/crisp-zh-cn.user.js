@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Crisp 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.7.1
-// @description  Crisp 网页后台的简体中文界面，同时适配英文和繁体中文，保留用户内容、代码和凭据。
+// @version      0.7.2
+// @description  Crisp 网页后台的简体中文界面，同时适配英文和繁体中文，优化本机系统简体字体显示，保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
 // @homepageURL  https://github.com/asiananlee/zh-cn-userscripts
@@ -17,7 +17,7 @@
 
 /*
  * 最后核对：2026-11-22
- * 覆盖范围：Crisp 后台（同时适配英文与繁体中文界面）导航、收件箱、联系人、访客、知识库、活动、分析、设置及已安装插件介绍；内嵌的 Hugo 后台和比较模型页、Crisp 插件配置（含 WhatsApp 多标签页）与会话侧栏，以及仅在 Crisp 内嵌的 n8n 集成页。
+ * 覆盖范围：Crisp 后台（同时适配英文与繁体中文界面）导航、收件箱、联系人、访客、知识库、活动、分析、设置及已安装插件介绍；内嵌的 Hugo 后台和比较模型页、Crisp 插件配置（含 WhatsApp 多标签页）与会话侧栏，以及仅在 Crisp 内嵌的 n8n 集成页。同时在根节点设置 lang="zh-CN" 与纯本机系统简体中文字体回退，修正繁体/外文环境下的汉字字形与发虚问题（不联网加载外部字体，保留代码等宽字体与 SVG 图标）。
  * 已知未覆盖：本版本为候选版，已基于实站英文与繁体中文后台全量扫描补齐漏译与错译，待在浏览器扩展中安装同版实站复验。图片和 Canvas 文字、WhatsApp API 长篇英文技术文档正文、未触发的提示及连接或提交后的界面待核对。
  * 不翻译的内容：访客可见的聊天文案、开场白、快捷回复正文、预设值与模拟预览、邮件/活动模板及 AI 指令正文；用户数据、插件名、配置值、代码、凭据、网址和输入均保持原样。后台文案字段的名称可汉化。
  * 调试：将 localStorage 的 crisp.zhCN.debug 设为 '1' 后刷新。删除该键或设为 '0' 后刷新关闭。
@@ -37,6 +37,22 @@
   if ((hugo || pluginFrame || n8nFrame) && (window.self === window.top || topOrigin !== 'https://app.crisp.chat')) return;
   const widgetFrame = (hugo || pluginFrame) && /\/widget\/?$/u.test(location.pathname);
   const frameScope = widgetFrame ? 'W' : hugo ? 'U' : pluginFrame ? 'Q' : n8nFrame ? 'N' : '';
+
+  // 仅在文档根节点设置简体中文语言标记与纯本机系统字体回退，不联网加载字体，不改动布局与代码/图标字体。
+  const SYSTEM_ZH_FONT = !frameScope
+    ? '"Crisp Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", "Helvetica Neue", Helvetica, Arial, sans-serif'
+    : '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif';
+  function applySystemFont() {
+    if (n8nFrame) return;
+    const root = document.documentElement;
+    if (!root) return;
+    if (root.lang !== 'zh-CN') root.lang = 'zh-CN';
+    if (!root.style.fontFamily.includes('PingFang SC')) root.style.fontFamily = SYSTEM_ZH_FONT;
+    if (!frameScope && !root.style.getPropertyValue('--vc-font-family').includes('PingFang SC')) {
+      root.style.setProperty('--vc-font-family', SYSTEM_ZH_FONT);
+    }
+  }
+  applySystemFont();
 
   const COMMON_EXACT = [
     [["1. Copy the following code","1. 複製以下程式碼"],"1. 复制以下代码","text",".c-integrations-popup span.o-markdown.o-markdown-title.u-semibold"],
@@ -5104,6 +5120,7 @@
   function flush() {
     timer = 0;
     processing = true;
+    applySystemFont();
     if (location.pathname !== pathname) {
       pathname = location.pathname;
       route = pathname.replace(/\/website\/[^/]+/u, '/website/:id').replace(/\/$/u, '')

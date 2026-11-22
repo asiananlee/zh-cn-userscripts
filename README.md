@@ -15,7 +15,7 @@
 
 | 站点 | 覆盖范围 | 版本 | 状态 | 安装 |
 | --- | --- | --- | --- | --- |
-| [Crisp](https://crisp.chat/) | 网页后台（支持英文与繁体中文自动适配）、内嵌 AI 客服、插件与 n8n 集成页（`app.crisp.chat`、`app.hugo.ai`、`plugins.crisp.chat`、`n8n.io/integrations/crisp/`） | 0.7.1 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/crisp-zh-cn.user.js) |
+| [Crisp](https://crisp.chat/) | 网页后台（支持英文与繁体中文自动适配）、内嵌 AI 客服、插件与 n8n 集成页（`app.crisp.chat`、`app.hugo.ai`、`plugins.crisp.chat`、`n8n.io/integrations/crisp/`） | 0.7.2 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/crisp-zh-cn.user.js) |
 | [OpenRouter](https://openrouter.ai) | 账户与工作区控制台 `openrouter.ai` | 0.1.1 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/openrouter-zh-cn.user.js) |
 | [Postmark](https://postmarkapp.com) | 账户控制台 `account.postmarkapp.com` | 0.1.1 | 部分验证 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/postmark-zh-cn.user.js) |
 | [Text](https://www.text.com) | 登录后后台主要界面 `www.text.com/app/` | 0.1.9 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/text-zh-cn.user.js) |
@@ -65,7 +65,7 @@
 - 不引入外部代码（没有 `@require`、`@connect`），不使用 Tampermonkey 的特权接口（`@grant none`）。
 - 不读取 Cookie、剪贴板和凭据，不写入任何本地存储，不用 `eval`，不写入 `innerHTML`。
 - `@match` 精确到目标网站，不会在其他网站上运行。
-- 只修改页面文字，不改变页面结构和功能，不读取你输入的内容。
+- 只修改页面文字（必要时仅在根节点设置 `lang="zh-CN"` 与本机系统简体中文字体回退以修正中文字形，不联网加载任何外部字体），不改变页面结构、布局和功能，不读取你输入的内容。
 - 每个脚本都是单个文件，没有依赖，你可以自己通读。
 
 其中能用文本规则判断的部分，由[自动检查](tools/check-userscripts.mjs)在每次推送和 PR 时拦截，其余靠逐项审查。自动检查不是安全证明。完整的约束见[脚本规范](docs/script-spec.md)，安全问题的报告方式见[安全政策](SECURITY.md)。
