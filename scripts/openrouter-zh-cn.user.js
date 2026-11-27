@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         OpenRouter 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.1.1
+// @version      0.1.2
 // @description  OpenRouter 控制台的简体中文界面；保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -12,15 +12,14 @@
 // @grant        none
 // ==/UserScript==
 /*
- * 最后核对：2026-10-29。
+ * 最后核对：2026-11-28。本版已完成本地隐私复核，尚未在实站重放。
  * 覆盖范围：openrouter.ai 已采集的账户、工作区控制台及共享弹层；文档正文不在范围内。
  * 已知未覆盖：部分 tooltip、Toast、服务端错误、需真实数据或付费的状态，以及未重放的手机组合。
  * 跨域 iframe、canvas 和图片文字无法按文本节点翻译。聊天标题、生成详情、全局搜索仍有已知漏译。
- * 本版统一脚本格式与调试保护，尚未在实站安装重放，不能沿用整理前的通过结论。
  * 不翻译用户内容、资源名、模型/提供商名称及描述、提示词、日志正文、代码、凭据、URL、数字与金额。
  * document-start 先安装监听，页面 load 后延迟 500ms 改字，降低初始水合冲突；仍可能出现英文闪烁。
  * 调试默认关闭：在浏览器开发者工具的 localStorage 中将 openrouter.zhCN.debug 设为 '1'，刷新后开启；
- * 设为 '0' 并刷新关闭。仅在控制台输出脱敏的未命中界面文字，总计最多 100 条，不写入存储。
+ * 设为 '0' 并刷新关闭。调试日志只显示漏译所在的页面分区和控件类型，每个位置组合只列一次，每次加载最多 100 条。
  */
 (() => {
   'use strict';
@@ -2196,13 +2195,12 @@
       runtimeStats.longTaskObserverSupported = true;
     }
     Object.defineProperty(window, '__openrouterZhCN', { configurable: true, value: {
-      version: '0.1.1',
+      version: '0.1.2',
       terms: new Set(Object.values(DICTIONARIES).flatMap(map => Array.from(map.keys()))).size,
       stats: runtimeStats,
     } });
   } catch (_) { /* diagnostics must not prevent translation */ }
   const originalAttributes = new WeakMap();
-  const privateNames = new Set();
   let headerCache = new WeakMap();
   let popupCache = new WeakMap();
 
@@ -2446,19 +2444,12 @@
     }
     const switcher = element.closest('button[aria-label]');
     if (switcher && /^(?:Switch account|Switch workspace|切换账户|切换工作区)$/.test(sourceAttribute(switcher, 'aria-label') || '')) {
-      if (debug) {
-        const identity = rawElementText(switcher);
-        if (identity && identity !== 'Personal') privateNames.add(identity);
-      }
       const personalLabel = /^(?:Switch account|切换账户)$/.test(sourceAttribute(switcher, 'aria-label') || '') &&
         ((type === 'text' && rawElementText(element) === 'Personal') ||
          (type === 'attr:alt' && sourceAttribute(element, 'alt') === 'Personal'));
       if (!personalLabel && (type === 'text' || element !== switcher || type !== 'attr:aria-label')) return true;
     }
-    if (route.key === 'profile' && element.closest('h1') && !element.closest('[role="dialog"]')) {
-      if (debug) privateNames.add(rawElementText(element.closest('h1')));
-      return true;
-    }
+    if (route.key === 'profile' && element.closest('h1') && !element.closest('[role="dialog"]')) return true;
     if (['workspace-key-detail', 'workspace-byok-provider'].includes(route.key) && element.closest('h1')) return true;
     if (type === 'text' && route.key === 'workspace-key-detail') {
       // Observed built-in policy rows, distinct from custom guardrail/resource names.
@@ -2485,10 +2476,6 @@
     if (type === 'text' && route.key === 'workspaces' && element.matches('td > span.italic.text-faint') && rawElementText(element) === 'No description') return false;
     const column = tableColumn(element);
     if (DATA_HEADERS.has(column)) {
-      if (debug && /^(?:Name|Owner)$/.test(column)) {
-        const identity = rawElementText(element.closest('td'));
-        if (identity && identity.length < 200) privateNames.add(identity);
-      }
       // Row action labels are UI; their variable part is retained by a template.
       if (!/^attr:(?:aria-label|title)$/.test(type) ||
           !/^(?:Actions for |Select )/.test(sourceAttribute(element, type.slice(5)) || '')) return true;
@@ -2508,8 +2495,7 @@
         !/^(?:Not configured|Set up|Beta|New)$/.test(rawElementText(element))) return true;
     if (type === 'attr:alt') {
       const alt = sourceAttribute(element, 'alt') || '';
-      const person = alt.match(/^(.+?)(?:'s|’s) (?:logo|avatar|profile picture)$/i);
-      if (person) { if (debug) privateNames.add(normalize(person[1])); return true; }
+      if (/^.+?(?:'s|’s) (?:logo|avatar|profile picture)$/i.test(alt)) return true;
       if (/^Favicon for /.test(alt)) return true;
     }
     // Only the feedback and table-settings dialogs were captured on the logs page.
@@ -2669,42 +2655,18 @@
     return null;
   }
 
-  const unmatched = new Map();
   const reported = new Set();
-  let debugTimer = 0;
+  const DEBUG_CONTROLS = ['button', 'a', 'label', 'th', 'option', 'h1', 'h2', 'h3', '[role="tab"]', '[role="menuitem"]'];
   function debugMiss(raw, element, type) {
-    if (!debug || !/[A-Za-z]{2}/.test(raw) || KEEP.has(normalize(raw)) || isSearchEcho(element)) return;
-    // Debug only fixed UI contexts, never arbitrary prose, chart values or data cells.
-    if (element.closest('td,svg,pre,code') || !element.closest('button,a,label,th,option,h1,h2,h3,[role="tab"],[role="menuitem"]')) return;
-    if (/^(?:Actions for|Select|Hide|Show only) /i.test(raw) || privateNames.has(normalize(raw))) return;
-    for (const name of privateNames) if (name.length > 1 && raw.includes(name)) return;
-    if (/\b(?:sk[-_]|gen-|[a-f0-9]{24,})/i.test(raw) || /[A-Za-z0-9_-]+\/[A-Za-z0-9_.-]+/.test(raw)) return;
-    let text = normalize(raw)
-      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '{email}')
-      .replace(/https?:\/\/\S+/gi, '{url}')
-      .replace(/\b[A-Za-z0-9_-]{24,}\b/g, '{id}')
-      .replace(/\b\d{4}-\d{2}-\d{2}(?:T[\d:.+-]+Z?)?/g, '{date}')
-      .replace(/\b(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?::\d+)?\b/g, '{domain}')
-      .replace(/[“‘"'][^“”‘’"']+[”’"']/g, '{user}')
-      .replace(/[$€£¥]\s*[\d,.]+/g, '{amount}')
-      .replace(/\b\d+(?:[.,:/-]\d+)*\b/g, '{n}');
-    if (!text || text.length > 350) return;
-    const scope = route.key || 'shared-navigation';
-    const key = scope + '|' + type + '|' + text;
-    if (reported.has(key) || reported.size + unmatched.size >= 100) return;
-    const previous = unmatched.get(key);
-    unmatched.set(key, { scope, type, text, count: (previous?.count || 0) + 1 });
-    if (!debugTimer) debugTimer = setTimeout(() => {
-      debugTimer = 0;
-      const rows = Array.from(unmatched.values());
-      if (rows.length) {
-        console.groupCollapsed('[OpenRouter 简体中文] 未命中界面文字：' + rows.length);
-        console.table(rows);
-        console.groupEnd();
-      }
-      for (const key of unmatched.keys()) reported.add(key);
-      unmatched.clear();
-    }, 1000);
+    if (!debug || reported.size >= 100 || !/[A-Za-z]{2}/.test(raw) || KEEP.has(normalize(raw))) return;
+    if (isSearchEcho(element) || element.closest('td,svg,pre,code')) return;
+    const control = DEBUG_CONTROLS.find(selector => element.closest(selector));
+    if (!control) return;
+    const scope = scopeIndex.get(route.key)?.slug || 'shared-navigation';
+    const hint = [scope, control, type].join(' / ');
+    if (reported.has(hint)) return;
+    reported.add(hint);
+    console.info('[OpenRouter 简体中文] 未匹配位置', hint);
   }
 
   function processText(node) {
@@ -2836,7 +2798,6 @@
     route = routeInfo();
     headerCache = new WeakMap();
     popupCache = new WeakMap();
-    privateNames.clear();
     pending.clear();
     active = null;
     enqueue(document.documentElement);

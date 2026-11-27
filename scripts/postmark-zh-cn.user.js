@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Postmark 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.1.1
+// @version      0.1.2
 // @description  Postmark 已登录控制台的简体中文界面；保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -12,14 +12,14 @@
 // @grant        none
 // ==/UserScript==
 /*
- * 最后核对：2026-10-29（初版 2026-10-28）。依据 54 份实站来源（含布局选项页）。
+ * 最后核对：2026-11-28。本版已完成本地隐私复核，尚未在实站重放。
  * 文档站不在范围。document-start 用于尽早监听动态菜单、异步内容和瞬时节点。
  * 已知未覆盖：未采集的表单错误/Toast、创建后页面及未重放的手机弹层组合；
  * MFA/其他成员状态、支付或客服跨域 iframe、封闭 Shadow DOM、canvas/图片文字。
- * 第二轮已做桌面与手机实站扫描；最终版四处账单提示补词只做了定向实站复验，未全量重放。动态候选大多不足两例。
+ * 上一版已做桌面与手机实站扫描，最后补充的账单提示只做了定向复验。
  * 不翻译代码、邮件/日志正文、资源名称、邮箱、API 令牌、URL、数字与金额实值。
  * 调试：localStorage.setItem('postmark.zhCN.debug','1') 后刷新；改为 '0' 后刷新关闭。
- * 调试输出已脱敏，但可能仍含页面上的资源名；分享前请逐条检查，不要整段粘贴到公开的 Issue。
+ * 调试日志只显示漏译所在的页面分区和控件类型，每个位置组合只列一次，每次加载最多 100 条。
  */
 (() => {
   'use strict';
@@ -140,8 +140,8 @@
   const BLOCK = 'script,style,noscript,code,pre,kbd,textarea,iframe,read-frog,read-frog-selection,[contenteditable]:not([contenteditable="false"]),.u-avatar_initial,.sig-update,.email-subj,.email-preview_wrapper,.email-preview_text,.bounce-table td,#f_tag option';
   const norm = s => String(s ?? '').replace(/\s+/gu, ' ').trim();
   const textMemory = new WeakMap(), attrMemory = new WeakMap(), pending = new Set();
-  const unknown = new Map();
-  let route = '', active = [], timer = null, working = false, routeRevision = 0, debugTimer;
+  const reported = new Set();
+  let route = '', active = [], timer = null, working = false, routeRevision = 0;
   const DEBUG = (() => { try { return localStorage.getItem('postmark.zhCN.debug') === '1'; } catch { return false; } })();
   const patterns = {
     n: '([0-9]+(?:[.,:][0-9]+)*)',
@@ -229,31 +229,22 @@
     if (value === n.nodeValue) return;
     textMemory.set(n,{source:raw,last:value,revision:routeRevision}); n.nodeValue=value;
   }
-  function debugMiss(raw) {
-    if (!DEBUG || !/[A-Za-z]{2}/.test(raw) || unknown.size >= 100 || raw.length > 600) return;
-    let safe = raw;
-    safe=safe.replace(/^Email opened in .+? from .+$/u,'Email opened in {client} from {location}').replace(/^Email opened from .+$/u,'Email opened from {location}').replace(/^Link visited in .+? from .+$/u,'Link visited in {client} from {location}');
-    // Learn only visible labels; never inspect ordinary input values.
-    for (const e of document.querySelectorAll('.c-user-popover_name,.server_name-label,.server-title_label,.sig-update,label[for="access-group"],img.u-avatar_photo[alt]')) {
-      const terms=[norm(e.textContent),...Array.from(e.childNodes).filter(n=>n.nodeType===3).map(n=>norm(n.nodeValue))];
-      if(e.tagName==='IMG') terms.push(norm(e.getAttribute('alt')));
-      for(const term of terms) if(term.length>1) safe=safe.split(term).join('{user}');
-    }
-    safe = safe.replace(/https?:\/\/[^\s<>]+/giu,'{url}').replace(/[\w.!#$%&'*+\/=?^`{|}~-]+@[\w.-]+\.[A-Za-z]{2,}/gu,'{email}')
-      .replace(/\b[0-9a-f]{8}-[0-9a-f-]{27,}\b/giu,'{id}').replace(/\b[A-Za-z0-9+/_=-]{24,}\b/gu,'{token}')
-      .replace(/\b[A-Za-z0-9_.-]*\d{7,}[A-Za-z0-9_.-]*\b/gu,'{id}').replace(/[$€£¥]\s*[\d,.]+/gu,'{amount}')
-      .replace(/\b\d+(?:[.,:/-]\d+)*\b/gu,'{n}');
-    if (/^(?:smtp;|k=rsa;)/iu.test(safe) || /^\{[^}]+\}$/u.test(safe)) return;
-    const key=active.map(s=>s.id).join(',')+'\0'+safe;
-    const row=unknown.get(key) || {pages:active.map(s=>s.id),text:safe,count:0}; row.count++; unknown.set(key,row);
-    if(!debugTimer) debugTimer=setTimeout(()=>{ debugTimer=null; console.info('[Postmark zh-CN] 未匹配的英文（已脱敏，最多 100 项）',[...unknown.values()]); },1000);
+  const DEBUG_CONTROLS = ['button', 'a', 'label', 'input', 'select', 'option', 'th', 'h1', 'h2', 'h3'];
+  function debugMiss(raw, element, type) {
+    if (!DEBUG || reported.size >= 100 || !/[A-Za-z]{2}/.test(raw)) return;
+    const control = DEBUG_CONTROLS.find(selector => element.closest(selector)) || 'element';
+    const scope = active.map(scope => scope.id).join(',') || 'shared';
+    const hint = [scope, control, type].join(' / ');
+    if (reported.has(hint)) return;
+    reported.add(hint);
+    console.info('[Postmark 简体中文] 未匹配位置', hint);
   }
   function textNode(n, force) {
     const e=n.parentElement; if(skipped(e, true)) return;
     const m=textMemory.get(n); if(m && n.nodeValue===m.last && !force) return;
     const raw=sourceText(n), key=norm(raw); if(!key) return;
     const v=lookup(key,e);
-    if(v===null) { if(force && m && n.nodeValue===m.last) writeText(n,raw,raw); debugMiss(key); return; }
+    if(v===null) { if(force && m && n.nodeValue===m.last) writeText(n,raw,raw); debugMiss(key, e, 'text'); return; }
     writeText(n,edges(raw,v),raw);
   }
   function attributes(e, force) {
@@ -269,7 +260,7 @@
       const raw=old && current===old.last ? old.source : current;
       // Tooltip markup, URL values and credentials are not parsed or replaced.
       if(/<\/?[A-Za-z][^>]*>/u.test(raw)) continue;
-      const v=lookup(norm(raw),e); if(v===null && !(force && old && current===old.last)) { debugMiss(norm(raw)); continue; }
+      const v=lookup(norm(raw),e); if(v===null && !(force && old && current===old.last)) { debugMiss(norm(raw), e, 'attr:' + name); continue; }
       const next=v===null ? raw : edges(raw,v); if(next===current) continue;
       const map=values || new Map(); map.set(name,{source:raw,last:next}); attrMemory.set(e,map); e.setAttribute(name,next);
     }

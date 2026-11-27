@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Crisp 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.8.0
+// @version      0.8.1
 // @description  Crisp 网页后台的简体中文界面，同时适配英文和繁体中文，优化本机系统简体字体显示，保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -16,11 +16,12 @@
 // ==/UserScript==
 
 /*
- * 最后核对：2026-11-27
+ * 最后核对：2026-11-28。本版已完成本地隐私复核，尚未在实站重放。
  * 覆盖范围：Crisp 后台（同时适配英文与繁体中文界面）导航、收件箱、联系人、访客、知识库、活动、分析、设置（含单点登录 SSO、全部弹窗、下拉菜单、悬停提示与 20+ 集成渠道安装引导）及已安装插件介绍；内嵌的 Hugo 后台和比较模型页、Crisp 插件配置（含 WhatsApp 多标签页）与会话侧栏，以及仅在 Crisp 内嵌的 n8n 集成页。同时在根节点设置 lang="zh-CN" 与纯本机系统简体中文字体回退，修正繁体/外文环境下的汉字字形与发虚问题（不联网加载外部字体，保留代码等宽字体与 SVG 图标）。
  * 已知未覆盖：图片和 Canvas 文字、WhatsApp API 长篇英文技术文档正文、未安装的第三方插件市场简介、需要实际提交/付费/授权/删除后才会出现的服务端报错与后续页面待核对。内嵌的 Hugo 后台（app.hugo.ai）与插件配置框架（plugins.crisp.chat）需在浏览器扩展中同版实装复验。
  * 不翻译的内容：访客可见的聊天文案、开场白、快捷回复正文、预设值与模拟预览、邮件/活动模板及 AI 指令正文；用户数据、联系人访问记录、插件名、配置值、代码、凭据、网址和输入均保持原样。后台文案字段的名称可汉化。
  * 调试：将 localStorage 的 crisp.zhCN.debug 设为 '1' 后刷新。删除该键或设为 '0' 后刷新关闭。
+ * 调试日志只显示漏译所在的页面分区和控件类型，每个位置组合只列一次，每次加载最多 100 条。
  */
 
 (() => {
@@ -5950,7 +5951,7 @@
     '.c-settings-header__title', '.c-settings-header__description', '.c-settings-content-card__name-label',
     '.c-sidebar-item__inner > .c-sidebar-item__inner-label', '.c-base-empty-spot__title',
     '.c-base-empty-spot__description', '.c-help-popup__option-label', '.c-mobile-popup__title'
-  ].join(',');
+  ];
 
   const normalize = raw => (raw || '').replace(/\s+/gu, ' ').trim();
   const CJK_LEAD_PUNCT = /^[，。：；？！、）】」』]/u;
@@ -6001,7 +6002,7 @@
     try { return localStorage.getItem('crisp.zhCN.debug') === '1'; }
     catch { return false; }
   })();
-  const misses = new Set();
+  const reported = new Set();
 
   function exactIndex(rows) {
     const index = new Map();
@@ -6108,28 +6109,19 @@
   }
 
   function debugMiss(key, element, type) {
-    if (!debug || misses.size >= 100 || type !== 'text' || !element.matches(SAFE_DEBUG)) return;
-    if (!/[A-Za-z]{2}/u.test(key) || /[\u3400-\u9fff]/u.test(key) || !element.getClientRects().length) return;
+    if (!debug || reported.size >= 100 || !/[A-Za-z]{2}/u.test(key) || /[\u3400-\u9fff]/u.test(key)) return;
+    const control = SAFE_DEBUG.find(selector => element.matches(selector));
+    if (!control || !element.getClientRects().length) return;
     if (element.matches('.c-sidebar-item__inner-label') && !element.closest(
       '.js-sidebar-item-link--inbox,.js-sidebar-item-link--agent,.js-sidebar-item-link--visitors,' +
       '.js-sidebar-item-link--contacts,.js-sidebar-item-link--helpdesk,.js-sidebar-item-link--campaigns,' +
       '.js-sidebar-item-link--analytics,.js-sidebar-item-link--plugins,.js-sidebar-item-link--settings'
     )) return;
-    // 隐去词条里的自由文本、数值和凭据。仅保留通用界面词，方便在原页面定位。
-    const safe = key
-      .replace(/(?:https?:\/\/|www\.)\S+/giu, '{url}')
-      .replace(/\S+@\S+/gu, '{email}')
-      .replace(/\b[\w-]+(?:\.[\w-]+)+\b/gu, '{domain}')
-      .replace(/\b[\w+/-]{16,}={0,2}\b/gu, '{token}')
-      .replace(/[$€£¥]\s*[\d,.]+/gu, '{amount}')
-      .replace(/\b\d+(?:[.,:/-]\d+)*\b/gu, '{n}')
-      .replace(/\b[a-z][a-z'-]*\b/giu, word =>
-        /^(?:add|all|and|cancel|close|configure|create|delete|edit|enable|for|in|more|new|no|not|open|or|remove|save|search|select|settings|the|to|update|view|with|your)$/iu.test(word) ? word : '{text}')
-      .replace(/[^a-z{}:.,?!\s-]+/giu, '{text}');
-    const signature = active.map(scope => scope.id).join(',') + ':' + safe;
-    if (misses.has(signature)) return;
-    misses.add(signature);
-    console.info('[Crisp zh-CN]', signature);
+    const scope = active.map(scope => scope.id).join(',') || 'shared';
+    const hint = [scope, control, type].join(' / ');
+    if (reported.has(hint)) return;
+    reported.add(hint);
+    console.info('[Crisp 简体中文] 未匹配位置', hint);
   }
 
   function sourceOf(node) {

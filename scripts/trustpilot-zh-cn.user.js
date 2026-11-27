@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Trustpilot 简体中文
 // @namespace    https://github.com/asiananlee/zh-cn-userscripts
-// @version      0.2.0
+// @version      0.2.1
 // @description  Trustpilot 商家后台的简体中文界面，优化本机系统简体字体显示；保留用户内容、代码和凭据。
 // @author       asiananlee
 // @license      MIT
@@ -13,18 +13,18 @@
 // ==/UserScript==
 
 /*
- * 最后核对：2026-11-27
+ * 最后核对：2026-11-28。本版已完成本地隐私复核，尚未在实站重放。
  * 覆盖范围：businessapp.b2b.trustpilot.com 商家后台全站界面，包括首页概览、服务与商品评论管理（含全部筛选弹窗、导出弹窗、举报理由弹窗与商品详情抽屉）、邀请概览/方式/模板/状态（含筛选、导出与取消队列弹窗）、全部 28 个 TrustBox 网站组件及邮件组件详情与代码弹窗、社交媒体与营销素材、数据分析（含 SVG 日期坐标）、18 个集成详情页、设置与账户安全弹窗（含删除账户确认页、消费者隐私邮件打开追踪）、套餐与账单（含升级定价页弹窗与 FAQ）、顶栏通知/试用弹窗以及 OneTrust Cookie 偏好弹窗。同时在根节点设置 lang="zh-CN" 与纯本机系统简体中文字体回退（不联网加载外部字体，保留代码等宽字体与图标）。
  * 已知未覆盖：付费套餐解锁后的内部功能界面、提交保存/发送/删除/举报后的服务端即时提示、未触发的服务器报错、跨域 TrustBox 预览 iframe（widget.trustpilot.com）内部、图片文字及第三方站外页面（如 Help Center、Google OAuth 登录页）。
  * 不翻译：客户与账户数据（姓名、邮箱、公司名、域名、地址、参考编号）、评论标题与正文、商品名称与描述、企业自定义分类与简介正文、邮件模板预览正文、第三方 Cookie 供应商说明、品牌与组件模板名、代码片段、凭据、URL、数字与金额。
  * 调试默认关闭：将 localStorage 的 trustpilot.zhCN.debug 设为 '1' 后刷新；删除该键或设为 '0' 后刷新关闭。
- * 调试仅在控制台汇总脱敏后的未命中界面文字，最多 100 条，不写入存储。
+ * 调试日志只显示漏译所在的页面分区和控件类型，每个位置组合只列一次，每次加载最多 100 条。
  */
 (() => {
   'use strict';
 
   if (window.top !== window.self || location.hostname !== 'businessapp.b2b.trustpilot.com') return;
-  const instance = Symbol.for('trustpilot.zhCN.0.2.0');
+  const instance = Symbol.for('trustpilot.zhCN.0.2.1');
   if (window[instance]) return;
   window[instance] = true;
 
@@ -3189,29 +3189,19 @@
 
   let debug = false;
   try { debug = localStorage.getItem('trustpilot.zhCN.debug') === '1'; } catch (_) { /* storage can be unavailable */ }
-  const misses = new Map();
+  const reported = new Set();
+  const DEBUG_CONTROLS = ['button', 'label', 'h1', 'h2', 'h3', 'h4', 'th', '[role="tab"]', '[role="menuitem"]', '[role="option"]', '[role="alert"]'];
   function collectMiss(text, element, type) {
-    if (!debug || !/[A-Za-z]{2}/.test(text) || PRESERVED.has(text) || misses.size >= 100) return;
-    if (!element.closest('button,label,h1,h2,h3,h4,th,[role="tab"],[role="menuitem"],[role="option"],[role="alert"]') && !type.startsWith('attr:')) return;
+    if (!debug || reported.size >= 100 || !/[A-Za-z]{2}/.test(text) || PRESERVED.has(text)) return;
     if (element.closest('#business-account-selector,#business-user-settings,[aria-label="User information"],[aria-label="用户信息"],#account-settings,td')) return;
-    if (/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b/.test(text) && !/[.!?:]/.test(text)) return;
-    if (/(?:key|token|secret|password)\s*[:=]\s*\S+/i.test(text)) return;
-    const safe = text
-      .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '{email}')
-      .replace(/https?:\/\/\S+|\bwww\.\S+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|io|ai|co|cn)\b/gi, '{url}')
-      .replace(/\b(?:[a-f0-9]{16,}|[A-Za-z0-9_-]{20,})\b/g, '{id}')
-      .replace(/["“”'][^"“”']+["“”']/g, '{user}')
-      .replace(/[$€£¥]\s*[\d,.]+|\b\d[\d,.]*(?:%|\+)?\b/g, '{n}');
-    const key = type + ':' + safe;
-    misses.set(key, { text: safe, type, path: pathname.replace(/[a-f0-9]{16,64}|\b\d{5,}\b/gi, ':id'), count: (misses.get(key)?.count || 0) + 1 });
+    const control = DEBUG_CONTROLS.find(selector => element.closest(selector)) || 'element';
+    if (control === 'element' && type === 'text') return;
+    const scope = currentScopes.map(scope => scope.id).join(',') || 'shared';
+    const hint = [scope, control, type].join(' / ');
+    if (reported.has(hint)) return;
+    reported.add(hint);
+    console.info('[Trustpilot 简体中文] 未匹配位置', hint);
   }
-  if (debug) setInterval(() => {
-    if (!misses.size) return;
-    console.groupCollapsed('[Trustpilot 简体中文] 未命中词典的界面文字');
-    console.table([...misses.values()]);
-    console.groupEnd();
-    misses.clear();
-  }, 5000);
 
   const roots = new Set();
   let activeWalker = null, activeRoot = null, scheduled = false;

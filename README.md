@@ -15,12 +15,12 @@
 
 | 站点 | 覆盖范围 | 版本 | 状态 | 安装 |
 | --- | --- | --- | --- | --- |
-| [Crisp](https://crisp.chat/) | 网页后台（支持英文与繁体中文自动适配，含全部弹窗与单点登录 SSO）、内嵌 AI 客服、插件与 n8n 集成页（`app.crisp.chat`、`app.hugo.ai`、`plugins.crisp.chat`、`n8n.io/integrations/crisp/`） | 0.8.0 | 部分验证 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/crisp-zh-cn.user.js) |
+| [Crisp](https://crisp.chat/) | 网页后台（支持英文与繁体中文自动适配，含全部弹窗与单点登录 SSO）、内嵌 AI 客服、插件与 n8n 集成页（`app.crisp.chat`、`app.hugo.ai`、`plugins.crisp.chat`、`n8n.io/integrations/crisp/`） | 0.8.1 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/crisp-zh-cn.user.js) |
 | [netcup SCP](https://www.servercontrolpanel.de/) | 登录后服务器控制面板英文界面（服务器、媒体、网络、防火墙、账户、SSH 密钥、防火墙策略、API 设置与鉴权指南，优化本机简体字体）`www.servercontrolpanel.de/scp-ui/` | 0.1.1 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/netcup-scp-zh-cn.user.js) |
-| [OpenRouter](https://openrouter.ai) | 账户与工作区控制台 `openrouter.ai` | 0.1.1 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/openrouter-zh-cn.user.js) |
-| [Postmark](https://postmarkapp.com) | 账户控制台 `account.postmarkapp.com` | 0.1.1 | 部分验证 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/postmark-zh-cn.user.js) |
+| [OpenRouter](https://openrouter.ai) | 账户与工作区控制台 `openrouter.ai` | 0.1.2 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/openrouter-zh-cn.user.js) |
+| [Postmark](https://postmarkapp.com) | 账户控制台 `account.postmarkapp.com` | 0.1.2 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/postmark-zh-cn.user.js) |
 | [Text](https://www.text.com) | 登录后后台主要界面 `www.text.com/app/` | 0.1.9 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/text-zh-cn.user.js) |
-| [Trustpilot](https://business.trustpilot.com) | 商家后台全站界面、弹窗、组件与集成详情（优化本机简体字体）`businessapp.b2b.trustpilot.com` | 0.2.0 | 部分验证 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/trustpilot-zh-cn.user.js) |
+| [Trustpilot](https://business.trustpilot.com) | 商家后台全站界面、弹窗、组件与集成详情（优化本机简体字体）`businessapp.b2b.trustpilot.com` | 0.2.1 | 候选版 | [安装](https://raw.githubusercontent.com/asiananlee/zh-cn-userscripts/main/scripts/trustpilot-zh-cn.user.js) |
 
 **状态**的含义：
 - **已验证**：当前版本在真实网站上重放了全部页面状态。
